@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Meter Dashboard</title>
+
+  <!-- ✅ Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- ✅ React + ReactDOM CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- ✅ Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- PapaParse for reading CSV -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+
+  <!-- ✅ Root div for React -->
+  <div id="root" class="w-full p-4 max-w-screen-xl mx-auto"></div>
+  
+
+  <!-- ✅ Your React App Script -->
+ <script type="text/babel">
+
+// Component 1: Meter Data Table
+const MeterDataTable = () => {
+  const [data, setData] = React.useState([]);
+
+  React.useEffect(() => {
+    Papa.parse("web_data.csv", {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      complete: (results) => {
+      console.log("CSV loaded:", results.data); // ✅ راقبي ده في DevTools
+      setData(results.data);
+},
+
+      
+    });
+  }, []);
+
+  return (
+    <div className="bg-white rounded-xl shadow p-4">
+      <h2 className="text-xl font-bold text-gray-800 mb-2">🔌 Meter Readings</h2>
+
+      <div className="overflow-x-auto max-h-64">
+        <table className="table-auto w-full text-sm">
+          <thead className="bg-gray-100 sticky top-0">
+            <tr>
+              <th className="px-2 py-1">Timestamp</th>
+              <th className="px-2 py-1">kWh</th>
+              <th className="px-2 py-1">PLC Signal Strength</th>
+              <th className="px-2 py-1">RF Signal Strength</th>             
+              <th className="px-2 py-1">PLC Latency</th>              
+              <th className="px-2 py-1">RF Latency</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((row, index) => (
+              <tr key={index}>
+                <td className="px-2 py-1">{row.Timestamp}</td>
+                <td className="px-2 py-1">{row.usage}</td>
+                <td className="px-2 py-1">{row.signal_strength_plc}</td>
+                <td className="px-2 py-1">{row.signal_strength_RF}</td>               
+                <td className="px-2 py-1">{row.latency_plc}</td>
+                <td className="px-2 py-1">{row.latency_RF}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+
+// Component 2: Forecast
+const ForecastBox = ({ data }) => (
+  <div className="bg-white rounded-xl shadow p-4">
+    <h2 className="text-xl font-bold mb-2">📈 Forecast</h2>
+    {data.length === 0 ? (
+      <p className="text-sm text-gray-500">No data loaded</p>
+    ) : (
+      <ul className="text-sm">
+        {data.map((d, i) => (
+          <li key={i}>
+            {d.timestamp} → {d.predicted_kwh} kWh
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+);
+
+
+// Component 3: Anomalies
+const AnomalyBox = ({ data }) => (
+  <div className="bg-white rounded-xl shadow p-4">
+    <h2 className="text-xl font-bold mb-2">⚠️ Anomalies</h2>
+    {data.length === 0 ? (
+      <p className="text-sm text-gray-500">No anomalies detected</p>
+    ) : (
+      <ul className="text-sm">
+        {data.map((a, i) => (
+          <li key={i}>
+            {a.timestamp} – Severity: <span className="font-semibold">{a.severity}</span>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+);
+
+// Component 4: Communication Mode
+const CommModeBox = ({ data }) => (
+  <div className="bg-white rounded-xl shadow p-4">
+    <h2 className="text-xl font-bold mb-2">📡 Communication Mode</h2>
+    {data.length === 0 ? (
+      <p className="text-sm text-gray-500">No decisions loaded</p>
+    ) : (
+      <ul className="text-sm">
+        {data.map((c, i) => (
+          <li key={i}>
+            {c.timestamp} → <span className="font-semibold">{c.mode}</span>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+);
+
+// Main App
+const App = () => {
+  const [forecast, setForecast] = React.useState([]);
+  const [anomalies, setAnomalies] = React.useState([]);
+  const [commModes, setCommModes] = React.useState([]);
+
+  const handleJsonUpload = async (e) => {
+    const file = e.target.files[0];
+    const json = await fakeDecrypt(file);
+    setForecast(json.forecast || []);
+    setAnomalies(json.anomalies || []);
+    setCommModes(json.communication_modes || []);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-blue-50 p-3 rounded text-center">
+        <input type="file" accept=".json" onChange={handleJsonUpload} />
+        <p className="text-sm text-gray-600 mt-1">Upload decrypted AI JSON</p>
+      </div>
+
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+        <MeterDataTable />
+        <ForecastBox data={forecast} />
+        <AnomalyBox data={anomalies} />
+        <CommModeBox data={commModes} />
+      </div>
+    </div>
+  );
+};
+
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+
+</script>
+</body>
+</html>
