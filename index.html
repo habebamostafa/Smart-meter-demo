@@ -148,18 +148,20 @@
     };
 
 
-// Component 2: Forecast - دوائر 0-12 و13-24 بجانب بعض
+// Component 2: Forecast – دائرتين بجانب بعض مع حجم أكبر ونص أكبر
 const ForecastBox = ({ data }) => {
-  const innerRadius = 80;   // دائرة الساعات من 0 لـ12
-  const outerRadius = 80;   // دائرة الساعات من 13 لـ24 (نفس الحجم)
-  const center = 100;       // مركز كل دائرة داخل SVG بحجم 200x200
-  const pointRadius = 8;    // حجم النقاط
+  // ✨ أحجام أكبر ✨
+  const innerRadius  = 100;  // دائرة 0–12
+  const outerRadius  = 100;  // دائرة 13–24
+  const svgSize      = 240;  // حجم الـ SVG (عرض × ارتفاع)
+  const center       = svgSize / 2; // مركز الدائرة
+  const pointRadius  = 10;   // حجم النقاط
 
   // فصل البيانات
   const firstHalf  = data.slice(0, 13).map((d, i) => ({ ...d, hour: i }));
   const secondHalf = data.slice(13, 25).map((d, i) => ({ ...d, hour: i + 13 }));
 
-  // دالة لحساب الإحداثيات
+  // حساب الإحداثيات
   const computePoints = (items, radius) =>
     items.map(p => {
       const count = items.length; // 13 أو 12
@@ -174,12 +176,12 @@ const ForecastBox = ({ data }) => {
   const innerPoints = computePoints(firstHalf, innerRadius);
   const outerPoints = computePoints(secondHalf, outerRadius);
 
-  // وظيفة تلوين النقاط
+  // دالة لألوان النقاط
   const getColor = (val) => {
-    if (val >= 0.6) return "#ef4444"; // أحمر
-    if (val >= 0.5) return "#f59e0b"; // كهرماني
-    if (val >= 0.4) return "#10b981"; // أخضر
-    return "#3b82f6";                // أزرق
+    if (val >= 0.6) return "#ef4444";
+    if (val >= 0.5) return "#f59e0b";
+    if (val >= 0.4) return "#10b981";
+    return "#3b82f6";
   };
 
   return (
@@ -195,9 +197,9 @@ const ForecastBox = ({ data }) => {
       ) : (
         <>
           {/* دائرتان جنب بعض */}
-          <div className="flex justify-center space-x-4 mb-6">
-            {/* دائرة الساعات 0-12 */}
-            <svg width="250" height="250" className="animate-fade-in">
+          <div className="flex justify-center space-x-6 mb-6">
+            {/* دائرة 0–12 */}
+            <svg width={svgSize} height={svgSize} className="animate-fade-in">
               <circle
                 cx={center} cy={center} r={innerRadius}
                 stroke="#94a3b8" strokeWidth="2" fill="none"
@@ -209,8 +211,8 @@ const ForecastBox = ({ data }) => {
                     fill={getColor(p.predicted_kwh)} stroke="#fff" strokeWidth="2"
                   />
                   <text
-                    x={p.x} y={p.y + 4} textAnchor="middle"
-                    fontSize="8" fill="white" fontWeight="bold"
+                    x={p.x} y={p.y + 5} textAnchor="middle"
+                    fontSize="12" fill="white" fontWeight="bold"
                   >
                     {Math.round(p.predicted_kwh * 100) / 100}
                   </text>
@@ -218,20 +220,20 @@ const ForecastBox = ({ data }) => {
               ))}
             </svg>
 
-            {/* دائرة الساعات 13-24 */}
-            <svg width="200" height="200" className="animate-fade-in">
+            {/* دائرة 13–24 */}
+            <svg width={svgSize} height={svgSize} className="animate-fade-in">
               <circle
                 cx={center} cy={center} r={outerRadius}
-                stroke="#94a3b8" strokeWidth="10" fill="none"
+                stroke="#94a3b8" strokeWidth="2" fill="none"
               />
               {outerPoints.map((p, i) => (
                 <g key={i} className="animate-fade-in">
                   <circle
                     cx={p.x} cy={p.y} r={pointRadius}
-                    fill={getColor(p.predicted_kwh)} stroke="#fff" strokeWidth="5"
+                    fill={getColor(p.predicted_kwh)} stroke="#fff" strokeWidth="2"
                   />
                   <text
-                    x={p.x} y={p.y + 4} textAnchor="middle"
+                    x={p.x} y={p.y + 5} textAnchor="middle"
                     fontSize="12" fill="white" fontWeight="bold"
                   >
                     {Math.round(p.predicted_kwh * 100) / 100}
@@ -241,7 +243,7 @@ const ForecastBox = ({ data }) => {
             </svg>
           </div>
 
-          {/* قائمة الساعات مبسطة */}
+          {/* قائمة الساعات */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-lg mx-auto animate-fade-in">
             {data.map((p, i) => (
               <div
@@ -260,8 +262,9 @@ const ForecastBox = ({ data }) => {
         </>
       )}
     </div>
-  );
+);
 };
+
 
 
 
