@@ -288,26 +288,50 @@ const ForecastBox = ({ data }) => {
 };
 
 
+// Component 3: Anomalies – bar chart بسيط مع لون حسب Severity
+const AnomalyBox = ({ data }) => {
+  // دالة تحدد لون البار بناءً على قيمة الـseverity
+  const getBarColor = (sev) => {
+    if (sev >= 80) return "bg-red-500";
+    if (sev >= 60) return "bg-orange-400";
+    if (sev >= 40) return "bg-yellow-400";
+    return "bg-green-400";
+  };
 
+  return (
+    <div className="bg-white rounded-xl shadow p-4 animate-slide-left">
+      <h2 className="text-xl font-bold mb-3">⚠️ Anomalies</h2>
 
+      {data.length === 0 ? (
+        <p className="text-sm text-gray-500">No anomalies detected</p>
+      ) : (
+        <div className="space-y-4">
+          {data.map((a, i) => (
+            <div key={i} className="space-y-1">
+              {/* Timestamp */}
+              <div className="text-sm font-medium text-gray-700">
+                {new Date(a.timestamp).toLocaleString()}
+              </div>
+              {/* Bar background */}
+              <div className="w-full bg-gray-200 h-3 rounded-full overflow-hidden">
+                {/* Bar foreground بعرض نسبي */}
+                <div
+                  className={`${getBarColor(a.severity)} h-3 rounded-full transition-all duration-500`}
+                  style={{ width: `${a.severity}%` }}
+                />
+              </div>
+              {/* قيمة الـseverity */}
+              <div className="text-xs text-gray-600">
+                Severity: <span className="font-semibold">{a.severity}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
-    // Component 3: Anomalies
-    const AnomalyBox = ({ data }) => (
-      <div className="bg-white rounded-xl shadow p-4">
-        <h2 className="text-xl font-bold mb-2">⚠️ Anomalies</h2>
-        {data.length === 0 ? (
-          <p className="text-sm text-gray-500">No anomalies detected</p>
-        ) : (
-          <ul className="text-sm">
-            {data.map((a, i) => (
-              <li key={i}>
-                {a.timestamp} – Severity: <span className="font-semibold">{a.severity}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    );
 
     // Component 4: Communication Mode
     const CommModeBox = ({ data }) => (
