@@ -242,8 +242,11 @@ const App = () => {
   const handleJsonUpload = async (e) => {
     const file = e.target.files[0];
       const response = await fetch("data/syn_data.json");
+      console.log("R: "+response);
+
       const json = await response.json();
-    setForecast(json.forecast || []);
+      console.log("J: "+json)
+      setForecast(json.forecast || []);
     setAnomalies(json.anomalies || []);
     setCommModes(json.communication_modes || []);
   };
