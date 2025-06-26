@@ -74,11 +74,11 @@
 
 <body class="bg-gradient-to-br from-blue-50 via-white to-gray-200 min-h-screen p-6">
 
-  <!-- ✅ Root div for React -->
+  <!-- Root div for React -->
   <div id="root" class="w-full p-4 max-w-screen-xl mx-auto"></div>
 
 
-  <!-- ✅ Your React App Script -->
+  <!--  React App Script -->
   <script defer type="text/babel">
     const fakeDecrypt = async (file) => {
       return new Promise((resolve, reject) => {
@@ -150,21 +150,18 @@
     };
 
 
-// Component 2: Forecast – دوائر جانبية متوازنة مع نص أكبر
+// Component 2: Forecast 
 const ForecastBox = ({ data }) => {
-  // ✨ إعدادات الحجم
-  const svgSize     = 250;           // حجم كل SVG
-  const center      = svgSize / 2;   // المركز
-  const innerRadius = 75;            // دائرة 0–12
-  const outerRadius = 75;           // دائرة 13–24
-  const pointRadius = 18;             // حجم النقاط
-  const fontSize    = 15;            // حجم رقم الكيلووات داخل النقاط
+  const svgSize     = 250;           
+  const center      = svgSize / 2;   
+  const innerRadius = 75;           
+  const outerRadius = 75;           
+  const pointRadius = 18;            
+  const fontSize    = 15;            
 
-  // فصل البيانات
   const firstHalf  = data.slice(0, 13).map((d, i) => ({ ...d, hour: i }));
   const secondHalf = data.slice(13, 25).map((d, i) => ({ ...d, hour: i + 13 }));
 
-  // دالة لحساب الإحداثيات
   const computePoints = (items, radius) =>
     items.map(p => {
       const angle = (p.hour / items.length) * 2 * Math.PI - Math.PI / 2;
@@ -178,7 +175,6 @@ const ForecastBox = ({ data }) => {
   const innerPoints = computePoints(firstHalf, innerRadius);
   const outerPoints = computePoints(secondHalf, outerRadius);
 
-  // تلوين النقاط
   const getColor = val => {
     if (val >= 0.6) return "#ef4444";
     if (val >= 0.5) return "#f59e0b";
@@ -198,9 +194,7 @@ const ForecastBox = ({ data }) => {
         </p>
       ) : (
         <>
-          {/* دائرتان بجانب بعض */}
           <div className="flex justify-center items-center space-x-8 mb-6 flex-grow">
-            {/* دائرة 0–12 */}
             <svg width={svgSize} height={svgSize} className="animate-fade-in">
               <circle
                 cx={center}
@@ -234,7 +228,6 @@ const ForecastBox = ({ data }) => {
               ))}
             </svg>
 
-            {/* دائرة 13–24 */}
             <svg width={svgSize} height={svgSize} className="animate-fade-in">
               <circle
                 cx={center}
@@ -269,7 +262,6 @@ const ForecastBox = ({ data }) => {
             </svg>
           </div>
 
-          {/* قائمة الساعات الأسفل */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-lg mx-auto animate-fade-in">
             {data.map((p, i) => (
               <div
@@ -290,9 +282,8 @@ const ForecastBox = ({ data }) => {
 };
 
 
-// Component 3: Anomalies – bar chart بسيط مع لون حسب Severity
+// Component 3: Anomalies 
 const AnomalyBox = ({ data }) => {
-  // دالة تحدد لون البار بناءً على قيمة الـseverity
   const getBarColor = (sev) => {
     if (sev >= 80) return "bg-red-500";
     if (sev >= 60) return "bg-orange-400";
@@ -314,15 +305,12 @@ const AnomalyBox = ({ data }) => {
               <div className="text-sm font-medium text-gray-700">
                 {new Date(a.timestamp).toLocaleString()}
               </div>
-              {/* Bar background */}
               <div className="w-full bg-gray-200 h-3 rounded-full overflow-hidden">
-                {/* Bar foreground بعرض نسبي */}
                 <div
                   className={`${getBarColor(a.severity)} h-3 rounded-full transition-all duration-500`}
                   style={{ width: `${a.severity * 100}%` }}
                 />
               </div>
-              {/* قيمة الـseverity */}
               <div className="text-xs text-gray-600">
                 Severity: <span className="font-semibold">{a.severity}</span>
               </div>
@@ -335,9 +323,8 @@ const AnomalyBox = ({ data }) => {
 };
 
 
-// Component 4: Communication Mode – كروت مع بادجات ملونة
+// Component 4: Communication Mode 
 const CommModeBox = ({ data }) => {
-  // دالة ترجع كلاس لوني حسب مود الاتصال
   const getBadgeColor = (mode) => {
     switch (mode) {
       case 'PLC': return 'bg-blue-100 text-blue-800';
@@ -365,7 +352,6 @@ const CommModeBox = ({ data }) => {
                 {new Date(c.timestamp).toLocaleString()}
               </div>
               
-              {/* Badge للـmode */}
               <span
                 className={`px-3 py-1 text-xs font-semibold rounded-full ${getBadgeColor(c.mode)}`}
               >
@@ -396,12 +382,10 @@ const CommModeBox = ({ data }) => {
             //setForecast(json.forecast || []);
             setAnomalies(json.anomalies || []);
             //setCommModes(json.communication_modes || []);
-            // لوج للتأكد من شكل البيانات
             console.log("Loaded forecast:", json.forecast);
             console.log("Loaded anomalies:", json.anomalies);
             console.log("Loaded commModes:", json.communication_modes);
 
-            // فعّل تعيين الـ state كاملة
             setForecast(
               (json.forecast || []).map(item => ({
                 ...item,
