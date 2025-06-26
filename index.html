@@ -240,22 +240,32 @@ const App = () => {
   const [commModes, setCommModes] = React.useState([]);
 
  React.useEffect(() => {
-  const fetchJson = async () => {
-    try {
-      const response = await fetch("data/syn_data.json");
-      const json = await response.json();
-      console.log("R: "+response);
-      console.log("J: "+ json)
-      //setForecast(json.forecast || []);
-      setAnomalies(json.anomalies || []);
-      //setCommModes(json.communication_modes || []);
-    } catch (error) {
-      console.error("Error loading JSON:", error);
-    }
-  };
+   const fetchJson = async () => {
+     try {
+       const response = await fetch("data/syn_data.json");
+       const json = await response.json();
+-      console.log("R: "+response);
+-      console.log("J: "+ json)
+-      //setForecast(json.forecast || []);
+-      setAnomalies(json.anomalies || []);
+-      //setCommModes(json.communication_modes || []);
++      // لوج للتأكد من شكل البيانات
++      console.log("Loaded forecast:", json.forecast);
++      console.log("Loaded anomalies:", json.anomalies);
++      console.log("Loaded commModes:", json.communication_modes);
++
++      // فعّل تعيين الـ state كاملة
++      setForecast(json.forecast || []);
++      setAnomalies(json.anomalies || []);
++      setCommModes(json.communication_modes || []);
+     } catch (error) {
+       console.error("Error loading JSON:", error);
+     }
+   };
+ 
+   fetchJson();
+ }, []);
 
-  fetchJson();
-}, []);
 
   return (
     <div className="space-y-4">
