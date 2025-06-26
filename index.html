@@ -7,14 +7,14 @@
   <title>Smart Meter Dashboard</title>
 
   <!-- ✅ Tailwind CSS CDN -->
-  <script defer  src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.tailwindcss.com"></script>
 
   <!-- ✅ React + ReactDOM CDN -->
-  <script defer  crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script defer  crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script defer crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script defer crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
   <!-- ✅ Babel for JSX -->
-  <script defer  src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script defer src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <!-- PapaParse for reading CSV -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
@@ -44,7 +44,7 @@
 
 
   <!-- ✅ Your React App Script -->
-  <script defer  type="text/babel">
+  <script defer type="text/babel">
     const fakeDecrypt = async (file) => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -119,12 +119,12 @@
       const center = 120;
       const pointRadius = 12;
 
-const points = data.slice(0, 24).map((d, i) => {
-  const angle = (i / 24) * 2 * Math.PI - Math.PI / 2;
-  const x = center + radius * Math.cos(angle);
-  const y = center + radius * Math.sin(angle);
-  return { ...d, x, y, hour: i };
-});
+      const points = data.slice(0, 24).map((d, i) => {
+        const angle = (i / 24) * 2 * Math.PI - Math.PI / 2;
+        const x = center + radius * Math.cos(angle);
+        const y = center + radius * Math.sin(angle);
+        return { ...d, x, y, hour: i };
+      });
 
       const getColor = (val) => {
         if (val >= 0.6) return "#ef4444"; // Red
@@ -193,8 +193,8 @@ const points = data.slice(0, 24).map((d, i) => {
                     className="bg-gradient-to-r from-blue-50 to-white p-2 rounded-md shadow text-sm flex justify-between items-center"
                   >
                     <span className="text-gray-700 font-semibold text-xs">
-   {new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
- </span>
+                      {new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                     <span className="text-blue-800 font-bold text-xs">⚡ {p.predicted_kwh} kWh</span>
                   </div>
                 ))}
