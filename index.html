@@ -16,6 +16,17 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <!-- PapaParse for reading CSV -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<style>
+@keyframes fadeIn {
+  0% { opacity: 0; transform: scale(0.5); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+</style>
+
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
 
@@ -81,24 +92,32 @@ const MeterDataTable = () => {
 
 // Component 2: Forecast - Circular Clock Style
 const ForecastBox = ({ data }) => {
-  const radius = 100; // radius of the circle
-  const center = 120; // center of the SVG
+  const radius = 100;
+  const center = 120;
   const pointRadius = 12;
 
-  // Generate 24-hour points
   const points = data.slice(0, 24).map((d, i) => {
-    const angle = (i / 24) * 2 * Math.PI - Math.PI / 2; // start from top
+    const angle = (i / 24) * 2 * Math.PI - Math.PI / 2;
     const x = center + radius * Math.cos(angle);
     const y = center + radius * Math.sin(angle);
     return { ...d, x, y, hour: i };
   });
 
+  const getColor = (val) => {
+    if (val >= 0.6) return "#ef4444"; // Red
+    if (val >= 0.5) return "#f59e0b"; // Amber
+    if (val >= 0.4) return "#10b981"; // Green
+    return "#3b82f6"; // Blue
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow p-6">
-      <h2 className="text-xl font-bold text-gray-800 mb-2">🕒 24-Hour Forecast Visualization</h2>
+    <div className="bg-white rounded-xl shadow p-6 transition-all duration-500">
+      <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
+        🕒 24-Hour Forecast Visualization
+      </h2>
 
       {points.length === 0 ? (
-        <p className="text-sm text-gray-500">No forecast data available.</p>
+        <p className="text-sm text-gray-500 text-center">No forecast data available.</p>
       ) : (
         <div className="flex flex-col items-center">
           <svg width="240" height="240" className="mb-6">
@@ -107,19 +126,25 @@ const ForecastBox = ({ data }) => {
               cx={center}
               cy={center}
               r={radius}
-              stroke="#cbd5e1"
+              stroke="#94a3b8"
               strokeWidth="2"
               fill="none"
             />
 
-            {/* Points */}
+            {/* Clock Reference Labels */}
+            <text x={center} y={center - radius - 8} textAnchor="middle" fontSize="10">12</text>
+            <text x={center + radius + 8} y={center + 3} fontSize="10">3</text>
+            <text x={center} y={center + radius + 15} textAnchor="middle" fontSize="10">6</text>
+            <text x={center - radius - 8} y={center + 3} fontSize="10">9</text>
+
+            {/* Points with Animation */}
             {points.map((p, i) => (
-              <g key={i}>
+              <g key={i} className="transition-all duration-500 ease-in-out animate-[fadeIn_0.5s_ease-out_forwards] opacity-0">
                 <circle
                   cx={p.x}
                   cy={p.y}
                   r={pointRadius}
-                  fill="#3b82f6"
+                  fill={getColor(p.predicted_kwh)}
                   stroke="#ffffff"
                   strokeWidth="2"
                 />
@@ -131,23 +156,21 @@ const ForecastBox = ({ data }) => {
                   fill="white"
                   fontWeight="bold"
                 >
-                  {Math.round(p.predicted_kwh)}
+                  {Math.round(p.predicted_kwh * 100) / 100}
                 </text>
               </g>
             ))}
           </svg>
 
           {/* Hourly List */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full max-w-md">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full max-w-md animate-fade-in">
             {points.map((p, i) => (
               <div
                 key={i}
-                className="bg-blue-50 p-2 rounded-md shadow text-sm flex justify-between"
+                className="bg-gradient-to-r from-blue-50 to-white p-2 rounded-md shadow text-sm flex justify-between items-center"
               >
-                <span className="text-gray-700 font-semibold">{p.timestamp}</span>
-                <span className="text-blue-800 font-bold">
-                  ⚡ {p.predicted_kwh} kWh
-                </span>
+                <span className="text-gray-700 font-semibold text-xs">{p.timestamp.split(" ")[1]}</span>
+                <span className="text-blue-800 font-bold text-xs">⚡ {p.predicted_kwh} kWh</span>
               </div>
             ))}
           </div>
