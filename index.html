@@ -196,9 +196,9 @@ const points = [...innerPoints, ...outerPoints];
             <div className="flex flex-col items-center">
   <svg width="240" height="240" className="mb-6">
   {/* Inner circle: ساعات 0-12 */}
-  <circle cx={center} cy={center} r={innerRadius} stroke="#94a3b8" strokeWidth="2" fill="none" />
+  <circle cx={center} cy={center} r={points} stroke="#94a3b8" strokeWidth="2" fill="none" />
   {/* Outer circle: ساعات 13-24 */}
-  <circle cx={center} cy={center} r={outerRadius} stroke="#94a3b8" strokeWidth="2" fill="none" />
+  <circle cx={center} cy={center} r={points} stroke="#94a3b8" strokeWidth="2" fill="none" />
   {/* ارسم كل النقاط من innerPoints و outerPoints */}
   {[...innerPoints, ...outerPoints].map((p, i) => (
     <g key={i} className="animate-fade-in">
