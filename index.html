@@ -36,7 +36,21 @@
 
   <!-- ✅ Your React App Script -->
  <script type="text/babel">
-
+const fakeDecrypt = async (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const json = JSON.parse(e.target.result);
+        resolve(json);
+      } catch (err) {
+        reject("Invalid JSON");
+      }
+    };
+    reader.onerror = () => reject("File reading error");
+    reader.readAsText(file);
+  });
+};
 // Component 1: Meter Data Table
 const MeterDataTable = () => {
   const [data, setData] = React.useState([]);
@@ -227,7 +241,8 @@ const App = () => {
 
   const handleJsonUpload = async (e) => {
     const file = e.target.files[0];
-    const json = await fakeDecrypt(file);
+      const response = await fetch("data/syn_data.json");
+      const json = await response.json();
     setForecast(json.forecast || []);
     setAnomalies(json.anomalies || []);
     setCommModes(json.communication_modes || []);
