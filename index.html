@@ -156,7 +156,7 @@ const ForecastBox = ({ data }) => {
   const innerRadius = 75;            // دائرة 0–12
   const outerRadius = 75;           // دائرة 13–24
   const pointRadius = 50;             // حجم النقاط
-  const fontSize    = 10;            // حجم رقم الكيلووات داخل النقاط
+  const fontSize    = 20;            // حجم رقم الكيلووات داخل النقاط
 
   // فصل البيانات
   const firstHalf  = data.slice(0, 13).map((d, i) => ({ ...d, hour: i }));
