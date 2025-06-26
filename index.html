@@ -148,24 +148,24 @@
     };
 
 
-// Component 2: Forecast – دائرتين بجانب بعض مع حجم أكبر ونص أكبر
+// Component 2: Forecast – دوائر جانبية متوازنة مع نص أكبر
 const ForecastBox = ({ data }) => {
-  // ✨ أحجام أكبر ✨
-  const innerRadius  = 100;  // دائرة 0–12
-  const outerRadius  = 100;  // دائرة 13–24
-  const svgSize      = 240;  // حجم الـ SVG (عرض × ارتفاع)
-  const center       = svgSize / 2; // مركز الدائرة
-  const pointRadius  = 10;   // حجم النقاط
+  // ✨ إعدادات الحجم
+  const svgSize     = 220;           // حجم كل SVG
+  const center      = svgSize / 2;   // المركز
+  const innerRadius = 75;            // دائرة 0–12
+  const outerRadius = 100;           // دائرة 13–24
+  const pointRadius = 6;             // حجم النقاط
+  const fontSize    = 10;            // حجم رقم الكيلووات داخل النقاط
 
   // فصل البيانات
   const firstHalf  = data.slice(0, 13).map((d, i) => ({ ...d, hour: i }));
   const secondHalf = data.slice(13, 25).map((d, i) => ({ ...d, hour: i + 13 }));
 
-  // حساب الإحداثيات
+  // دالة لحساب الإحداثيات
   const computePoints = (items, radius) =>
     items.map(p => {
-      const count = items.length; // 13 أو 12
-      const angle = (p.hour / count) * 2 * Math.PI - Math.PI / 2;
+      const angle = (p.hour / items.length) * 2 * Math.PI - Math.PI / 2;
       return {
         ...p,
         x: center + radius * Math.cos(angle),
@@ -176,8 +176,8 @@ const ForecastBox = ({ data }) => {
   const innerPoints = computePoints(firstHalf, innerRadius);
   const outerPoints = computePoints(secondHalf, outerRadius);
 
-  // دالة لألوان النقاط
-  const getColor = (val) => {
+  // تلوين النقاط
+  const getColor = val => {
     if (val >= 0.6) return "#ef4444";
     if (val >= 0.5) return "#f59e0b";
     if (val >= 0.4) return "#10b981";
@@ -196,23 +196,35 @@ const ForecastBox = ({ data }) => {
         </p>
       ) : (
         <>
-          {/* دائرتان جنب بعض */}
-          <div className="flex justify-center space-x-6 mb-6">
+          {/* دائرتان بجانب بعض */}
+          <div className="flex justify-center items-center space-x-8 mb-6">
             {/* دائرة 0–12 */}
             <svg width={svgSize} height={svgSize} className="animate-fade-in">
               <circle
-                cx={center} cy={center} r={innerRadius}
-                stroke="#94a3b8" strokeWidth="2" fill="none"
+                cx={center}
+                cy={center}
+                r={innerRadius}
+                stroke="#94a3b8"
+                strokeWidth="2"
+                fill="none"
               />
               {innerPoints.map((p, i) => (
                 <g key={i} className="animate-fade-in">
                   <circle
-                    cx={p.x} cy={p.y} r={pointRadius}
-                    fill={getColor(p.predicted_kwh)} stroke="#fff" strokeWidth="2"
+                    cx={p.x}
+                    cy={p.y}
+                    r={pointRadius}
+                    fill={getColor(p.predicted_kwh)}
+                    stroke="#fff"
+                    strokeWidth="1.5"
                   />
                   <text
-                    x={p.x} y={p.y + 5} textAnchor="middle"
-                    fontSize="12" fill="white" fontWeight="bold"
+                    x={p.x}
+                    y={p.y + 4}
+                    textAnchor="middle"
+                    fontSize={fontSize}
+                    fill="white"
+                    fontWeight="bold"
                   >
                     {Math.round(p.predicted_kwh * 100) / 100}
                   </text>
@@ -223,18 +235,30 @@ const ForecastBox = ({ data }) => {
             {/* دائرة 13–24 */}
             <svg width={svgSize} height={svgSize} className="animate-fade-in">
               <circle
-                cx={center} cy={center} r={outerRadius}
-                stroke="#94a3b8" strokeWidth="2" fill="none"
+                cx={center}
+                cy={center}
+                r={outerRadius}
+                stroke="#94a3b8"
+                strokeWidth="2"
+                fill="none"
               />
               {outerPoints.map((p, i) => (
                 <g key={i} className="animate-fade-in">
                   <circle
-                    cx={p.x} cy={p.y} r={pointRadius}
-                    fill={getColor(p.predicted_kwh)} stroke="#fff" strokeWidth="2"
+                    cx={p.x}
+                    cy={p.y}
+                    r={pointRadius}
+                    fill={getColor(p.predicted_kwh)}
+                    stroke="#fff"
+                    strokeWidth="1.5"
                   />
                   <text
-                    x={p.x} y={p.y + 5} textAnchor="middle"
-                    fontSize="12" fill="white" fontWeight="bold"
+                    x={p.x}
+                    y={p.y + 4}
+                    textAnchor="middle"
+                    fontSize={fontSize}
+                    fill="white"
+                    fontWeight="bold"
                   >
                     {Math.round(p.predicted_kwh * 100) / 100}
                   </text>
@@ -243,26 +267,24 @@ const ForecastBox = ({ data }) => {
             </svg>
           </div>
 
-          {/* قائمة الساعات */}
+          {/* قائمة الساعات الأسفل */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-lg mx-auto animate-fade-in">
             {data.map((p, i) => (
               <div
                 key={i}
-                className="bg-gradient-to-r from-blue-50 to-white p-2 rounded-md shadow text-sm flex justify-between items-center"
+                className="bg-gradient-to-r from-blue-50 to-white p-2 rounded-md shadow flex justify-between items-center text-xs"
               >
-                <span className="text-gray-700 font-semibold text-xs">
+                <span className="font-semibold">
                   {new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
-                <span className="text-blue-800 font-bold text-xs">
-                  ⚡ {p.predicted_kwh} kWh
-                </span>
+                <span className="font-bold">⚡{p.predicted_kwh.toFixed(2)}</span>
               </div>
             ))}
           </div>
         </>
       )}
     </div>
-);
+  );
 };
 
 
