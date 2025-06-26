@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,274 +16,288 @@
   <!-- ✅ Babel for JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <!-- PapaParse for reading CSV -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-<style>
-@keyframes fadeIn {
-  0% { opacity: 0; transform: scale(0.5); }
-  100% { opacity: 1; transform: scale(1); }
-}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <style>
+    @keyframes fadeIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.5);
+      }
 
-.animate-fade-in {
-  animation: fadeIn 0.8s ease-out forwards;
-}
-</style>
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.8s ease-out forwards;
+    }
+  </style>
 
 </head>
+
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
 
   <!-- ✅ Root div for React -->
   <div id="root" class="w-full p-4 max-w-screen-xl mx-auto"></div>
-  
+
 
   <!-- ✅ Your React App Script -->
- <script type="text/babel">
-const fakeDecrypt = async (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const json = JSON.parse(e.target.result);
-        resolve(json);
-      } catch (err) {
-        reject("Invalid JSON");
-      }
+  <script type="text/babel">
+    const fakeDecrypt = async (file) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const json = JSON.parse(e.target.result);
+            resolve(json);
+          } catch (err) {
+            reject("Invalid JSON");
+          }
+        };
+        reader.onerror = () => reject("File reading error");
+        reader.readAsText(file);
+      });
     };
-    reader.onerror = () => reject("File reading error");
-    reader.readAsText(file);
-  });
-};
-// Component 1: Meter Data Table
-const MeterDataTable = () => {
-  const [data, setData] = React.useState([]);
+    // Component 1: Meter Data Table
+    const MeterDataTable = () => {
+      const [data, setData] = React.useState([]);
 
-  React.useEffect(() => {
-    Papa.parse("data/web_data.csv", {
-      download: true,
-      header: true,
-      dynamicTyping: true,
-      complete: (results) => {
-      console.log("CSV loaded:", results.data);
-      setData(results.data);
-},
-
-      
-    });
-  }, []);
-
-  return (
-    <div className="bg-white rounded-xl shadow p-4">
-      <h2 className="text-xl font-bold text-gray-800 mb-2">🔌 Meter Readings</h2>
-
-      <div className="overflow-x-auto max-h-64">
-        <table className="table-auto w-full text-sm">
-          <thead className="bg-gray-100 sticky top-0">
-            <tr>
-              <th className="px-2 py-1">Timestamp</th>
-              <th className="px-2 py-1">kWh</th>
-              <th className="px-2 py-1">PLC Signal Strength</th>
-              <th className="px-2 py-1">RF Signal Strength</th>             
-              <th className="px-2 py-1">PLC Latency</th>              
-              <th className="px-2 py-1">RF Latency</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((row, index) => (
-              <tr key={index}>
-                <td className="px-2 py-1">{row.Timestamp}</td>
-                <td className="px-2 py-1">{row.usage}</td>
-                <td className="px-2 py-1">{row.signal_strength_plc}</td>
-                <td className="px-2 py-1">{row.signal_strength_RF}</td>               
-                <td className="px-2 py-1">{row.latency_plc}</td>
-                <td className="px-2 py-1">{row.latency_RF}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
+      React.useEffect(() => {
+        Papa.parse("data/web_data.csv", {
+          download: true,
+          header: true,
+          dynamicTyping: true,
+          complete: (results) => {
+            console.log("CSV loaded:", results.data);
+            setData(results.data);
+          },
 
 
-// Component 2: Forecast - Circular Clock Style
-const ForecastBox = ({ data }) => {
-  const radius = 100;
-  const center = 120;
-  const pointRadius = 12;
+        });
+      }, []);
 
-  const points = data.slice(0, 24).map((d, i) => {
-    const angle = (i / 24) * 2 * Math.PI - Math.PI / 2;
-    const x = center + radius * Math.cos(angle);
-    const y = center + radius * Math.sin(angle);
-    return { ...d, x, y, hour: i };
-  });
+      return (
+        <div className="bg-white rounded-xl shadow p-4">
+          <h2 className="text-xl font-bold text-gray-800 mb-2">🔌 Meter Readings</h2>
 
-  const getColor = (val) => {
-    if (val >= 0.6) return "#ef4444"; // Red
-    if (val >= 0.5) return "#f59e0b"; // Amber
-    if (val >= 0.4) return "#10b981"; // Green
-    return "#3b82f6"; // Blue
-  };
-
-  return (
-    <div className="bg-white rounded-xl shadow p-6 transition-all duration-500">
-      <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
-        🕒 24-Hour Forecast Visualization
-      </h2>
-
-      {points.length === 0 ? (
-        <p className="text-sm text-gray-500 text-center">No forecast data available.</p>
-      ) : (
-        <div className="flex flex-col items-center">
-          <svg width="240" height="240" className="mb-6">
-            {/* Clock Circle */}
-            <circle
-              cx={center}
-              cy={center}
-              r={radius}
-              stroke="#94a3b8"
-              strokeWidth="2"
-              fill="none"
-            />
-
-            {/* Clock Reference Labels */}
-            <text x={center} y={center - radius - 8} textAnchor="middle" fontSize="10">12</text>
-            <text x={center + radius + 8} y={center + 3} fontSize="10">3</text>
-            <text x={center} y={center + radius + 15} textAnchor="middle" fontSize="10">6</text>
-            <text x={center - radius - 8} y={center + 3} fontSize="10">9</text>
-
-            {/* Points with Animation */}
-            {points.map((p, i) => (
-              <g key={i} className="transition-all duration-500 ease-in-out animate-[fadeIn_0.5s_ease-out_forwards] opacity-0">
-                <circle
-                  cx={p.x}
-                  cy={p.y}
-                  r={pointRadius}
-                  fill={getColor(p.predicted_kwh)}
-                  stroke="#ffffff"
-                  strokeWidth="2"
-                />
-                <text
-                  x={p.x}
-                  y={p.y + 4}
-                  textAnchor="middle"
-                  fontSize="8"
-                  fill="white"
-                  fontWeight="bold"
-                >
-                  {Math.round(p.predicted_kwh * 100) / 100}
-                </text>
-              </g>
-            ))}
-          </svg>
-
-          {/* Hourly List */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full max-w-md animate-fade-in">
-            {points.map((p, i) => (
-              <div
-                key={i}
-                className="bg-gradient-to-r from-blue-50 to-white p-2 rounded-md shadow text-sm flex justify-between items-center"
-              >
-                <span className="text-gray-700 font-semibold text-xs">{p.timestamp.split(" ")[1]}</span>
-                <span className="text-blue-800 font-bold text-xs">⚡ {p.predicted_kwh} kWh</span>
-              </div>
-            ))}
+          <div className="overflow-x-auto max-h-64">
+            <table className="table-auto w-full text-sm">
+              <thead className="bg-gray-100 sticky top-0">
+                <tr>
+                  <th className="px-2 py-1">Timestamp</th>
+                  <th className="px-2 py-1">kWh</th>
+                  <th className="px-2 py-1">PLC Signal Strength</th>
+                  <th className="px-2 py-1">RF Signal Strength</th>
+                  <th className="px-2 py-1">PLC Latency</th>
+                  <th className="px-2 py-1">RF Latency</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((row, index) => (
+                  <tr key={index}>
+                    <td className="px-2 py-1">{row.Timestamp}</td>
+                    <td className="px-2 py-1">{row.usage}</td>
+                    <td className="px-2 py-1">{row.signal_strength_plc}</td>
+                    <td className="px-2 py-1">{row.signal_strength_RF}</td>
+                    <td className="px-2 py-1">{row.latency_plc}</td>
+                    <td className="px-2 py-1">{row.latency_RF}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-      )}
-    </div>
-  );
-};
+      );
+    };
+
+
+    // Component 2: Forecast - Circular Clock Style
+    const ForecastBox = ({ data }) => {
+      const radius = 100;
+      const center = 120;
+      const pointRadius = 12;
+
+const points = data.slice(0, 24).map((d, i) => {
+  const angle = (i / 24) * 2 * Math.PI - Math.PI / 2;
+  const x = center + radius * Math.cos(angle);
+  const y = center + radius * Math.sin(angle);
+  return { ...d, x, y, hour: i };
+});
+
+      const getColor = (val) => {
+        if (val >= 0.6) return "#ef4444"; // Red
+        if (val >= 0.5) return "#f59e0b"; // Amber
+        if (val >= 0.4) return "#10b981"; // Green
+        return "#3b82f6"; // Blue
+      };
+
+      return (
+        <div className="bg-white rounded-xl shadow p-6 transition-all duration-500">
+          <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
+            🕒 24-Hour Forecast Visualization
+          </h2>
+
+          {points.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center">No forecast data available.</p>
+          ) : (
+            <div className="flex flex-col items-center">
+              <svg width="240" height="240" className="mb-6">
+                {/* Clock Circle */}
+                <circle
+                  cx={center}
+                  cy={center}
+                  r={radius}
+                  stroke="#94a3b8"
+                  strokeWidth="2"
+                  fill="none"
+                />
+
+                {/* Clock Reference Labels */}
+                <text x={center} y={center - radius - 8} textAnchor="middle" fontSize="10">12</text>
+                <text x={center + radius + 8} y={center + 3} fontSize="10">3</text>
+                <text x={center} y={center + radius + 15} textAnchor="middle" fontSize="10">6</text>
+                <text x={center - radius - 8} y={center + 3} fontSize="10">9</text>
+
+                {/* Points with Animation */}
+                {points.map((p, i) => (
+                  <g key={i} className="transition-all duration-500 ease-in-out animate-[fadeIn_0.5s_ease-out_forwards] opacity-0">
+                    <circle
+                      cx={p.x}
+                      cy={p.y}
+                      r={pointRadius}
+                      fill={getColor(p.predicted_kwh)}
+                      stroke="#ffffff"
+                      strokeWidth="2"
+                    />
+                    <text
+                      x={p.x}
+                      y={p.y + 4}
+                      textAnchor="middle"
+                      fontSize="8"
+                      fill="white"
+                      fontWeight="bold"
+                    >
+                      {Math.round(p.predicted_kwh * 100) / 100}
+                    </text>
+                  </g>
+                ))}
+              </svg>
+
+              {/* Hourly List */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full max-w-md animate-fade-in">
+                {points.map((p, i) => (
+                  <div
+                    key={i}
+                    className="bg-gradient-to-r from-blue-50 to-white p-2 rounded-md shadow text-sm flex justify-between items-center"
+                  >
+                    <span className="text-gray-700 font-semibold text-xs">{p.timestamp.split(" ")[1]}</span>
+                    <span className="text-blue-800 font-bold text-xs">⚡ {p.predicted_kwh} kWh</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
 
 
 
 
-// Component 3: Anomalies
-const AnomalyBox = ({ data }) => (
-  <div className="bg-white rounded-xl shadow p-4">
-    <h2 className="text-xl font-bold mb-2">⚠️ Anomalies</h2>
-    {data.length === 0 ? (
-      <p className="text-sm text-gray-500">No anomalies detected</p>
-    ) : (
-      <ul className="text-sm">
-        {data.map((a, i) => (
-          <li key={i}>
-            {a.timestamp} – Severity: <span className="font-semibold">{a.severity}</span>
-          </li>
-        ))}
-      </ul>
-    )}
-  </div>
-);
-
-// Component 4: Communication Mode
-const CommModeBox = ({ data }) => (
-  <div className="bg-white rounded-xl shadow p-4">
-    <h2 className="text-xl font-bold mb-2">📡 Communication Mode</h2>
-    {data.length === 0 ? (
-      <p className="text-sm text-gray-500">No decisions loaded</p>
-    ) : (
-      <ul className="text-sm">
-        {data.map((c, i) => (
-          <li key={i}>
-            {c.timestamp} → <span className="font-semibold">{c.mode}</span>
-          </li>
-        ))}
-      </ul>
-    )}
-  </div>
-);
-
-// Main App
-const App = () => {
-  const [forecast, setForecast] = React.useState([]);
-  const [anomalies, setAnomalies] = React.useState([]);
-  const [commModes, setCommModes] = React.useState([]);
-
- React.useEffect(() => {
-   const fetchJson = async () => {
-     try {
-       const response = await fetch("data/syn_data.json");
-       const json = await response.json();
--      console.log("R: "+response);
--      console.log("J: "+ json)
--      //setForecast(json.forecast || []);
--      setAnomalies(json.anomalies || []);
--      //setCommModes(json.communication_modes || []);
-+      // لوج للتأكد من شكل البيانات
-+      console.log("Loaded forecast:", json.forecast);
-+      console.log("Loaded anomalies:", json.anomalies);
-+      console.log("Loaded commModes:", json.communication_modes);
-+
-+      // فعّل تعيين الـ state كاملة
-+      setForecast(json.forecast || []);
-+      setAnomalies(json.anomalies || []);
-+      setCommModes(json.communication_modes || []);
-     } catch (error) {
-       console.error("Error loading JSON:", error);
-     }
-   };
- 
-   fetchJson();
- }, []);
-
-
-  return (
-    <div className="space-y-4">
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-        <MeterDataTable />
-        <ForecastBox data={forecast} />
-        <AnomalyBox data={anomalies} />
-        <CommModeBox data={commModes} />
+    // Component 3: Anomalies
+    const AnomalyBox = ({ data }) => (
+      <div className="bg-white rounded-xl shadow p-4">
+        <h2 className="text-xl font-bold mb-2">⚠️ Anomalies</h2>
+        {data.length === 0 ? (
+          <p className="text-sm text-gray-500">No anomalies detected</p>
+        ) : (
+          <ul className="text-sm">
+            {data.map((a, i) => (
+              <li key={i}>
+                {a.timestamp} – Severity: <span className="font-semibold">{a.severity}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-    </div>
-  );
-};
+    );
+
+    // Component 4: Communication Mode
+    const CommModeBox = ({ data }) => (
+      <div className="bg-white rounded-xl shadow p-4">
+        <h2 className="text-xl font-bold mb-2">📡 Communication Mode</h2>
+        {data.length === 0 ? (
+          <p className="text-sm text-gray-500">No decisions loaded</p>
+        ) : (
+          <ul className="text-sm">
+            {data.map((c, i) => (
+              <li key={i}>
+                {c.timestamp} → <span className="font-semibold">{c.mode}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+
+    // Main App
+    const App = () => {
+      const [forecast, setForecast] = React.useState([]);
+      const [anomalies, setAnomalies] = React.useState([]);
+      const [commModes, setCommModes] = React.useState([]);
+
+      React.useEffect(() => {
+        const fetchJson = async () => {
+          try {
+            const response = await fetch("data/syn_data.json");
+            const json = await response.json();
+            console.log("R: " + response);
+            console.log("J: " + json)
+            //setForecast(json.forecast || []);
+            setAnomalies(json.anomalies || []);
+            //setCommModes(json.communication_modes || []);
+            // لوج للتأكد من شكل البيانات
+            console.log("Loaded forecast:", json.forecast);
+            console.log("Loaded anomalies:", json.anomalies);
+            console.log("Loaded commModes:", json.communication_modes);
+
+            // فعّل تعيين الـ state كاملة
+            setForecast(
+              (json.forecast || []).map(item => ({
+                ...item,
+                timestamp: new Date(item.timestamp)
+              }))
+            );
+            setAnomalies(json.anomalies || []);
+            setCommModes(json.communication_modes || []);
+          } catch (error) {
+            console.error("Error loading JSON:", error);
+          }
+        };
+
+        fetchJson();
+      }, []);
 
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
+      return (
+        <div className="space-y-4">
+          <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+            <MeterDataTable />
+            <ForecastBox data={forecast} />
+            <AnomalyBox data={anomalies} />
+            <CommModeBox data={commModes} />
+          </div>
+        </div>
+      );
+    };
 
-</script>
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+
+  </script>
 </body>
+
 </html>
