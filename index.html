@@ -7,16 +7,16 @@
   <title>Smart Meter Dashboard</title>
 
   <!-- ✅ Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer  src="https://cdn.tailwindcss.com"></script>
 
   <!-- ✅ React + ReactDOM CDN -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script defer  crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script defer  crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
   <!-- ✅ Babel for JSX -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script defer  src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <!-- PapaParse for reading CSV -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
     @keyframes fadeIn {
       0% {
@@ -44,7 +44,7 @@
 
 
   <!-- ✅ Your React App Script -->
-  <script type="text/babel">
+  <script defer  type="text/babel">
     const fakeDecrypt = async (file) => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
