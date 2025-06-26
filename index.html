@@ -98,26 +98,53 @@
     // Component 1: Meter Data Table
     const MeterDataTable = () => {
       const [data, setData] = React.useState([]);
-
       React.useEffect(() => {
         Papa.parse("data/web_data.csv", {
           download: true,
           header: true,
           dynamicTyping: true,
-          complete: (results) => {
-            console.log("CSV loaded:", results.data);
-            setData(results.data);
-          },
-
-
+          complete: (results) => setData(results.data),
         });
       }, []);
+
+      return (
+        <div className="bg-white rounded-xl shadow p-4 h-full flex flex-col">
+          <h2 className="text-xl font-bold text-gray-800 mb-2">🔌 Meter Readings</h2>
+          <div className="flex-grow overflow-auto">
+            <table className="table-auto w-full text-sm">
+              <thead className="bg-gray-100 sticky top-0">
+                <tr>
+                  <th className="px-3 py-2">Timestamp</th>
+                  <th className="px-3 py-2">kWh</th>
+                  <th className="px-3 py-2">PLC Signal</th>
+                  <th className="px-3 py-2">RF Signal</th>
+                  <th className="px-3 py-2">PLC Latency</th>
+                  <th className="px-3 py-2">RF Latency</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((row, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50">
+                    <td className="px-3 py-1">{row.Timestamp}</td>
+                    <td className="px-3 py-1">{row.usage}</td>
+                    <td className="px-3 py-1">{row.signal_strength_plc}</td>
+                    <td className="px-3 py-1">{row.signal_strength_RF}</td>
+                    <td className="px-3 py-1">{row.latency_plc}</td>
+                    <td className="px-3 py-1">{row.latency_RF}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    };
 
       return (
         <div className="bg-white rounded-xl shadow p-4">
           <h2 className="text-xl font-bold text-gray-800 mb-2">🔌 Meter Readings</h2>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-100">
             <table className="table-auto w-full text-sm">
               <thead className="bg-gray-100 sticky top-0">
                 <tr>
