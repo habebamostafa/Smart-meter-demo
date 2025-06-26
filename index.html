@@ -317,7 +317,7 @@ const AnomalyBox = ({ data }) => {
                 {/* Bar foreground بعرض نسبي */}
                 <div
                   className={`${getBarColor(a.severity)} h-3 rounded-full transition-all duration-500`}
-                  style={{ width: `${a.severity}%` }}
+                  style={{ width: `${a.severity * 100}%` }}
                 />
               </div>
               {/* قيمة الـseverity */}
