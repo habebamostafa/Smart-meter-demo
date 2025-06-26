@@ -65,7 +65,7 @@
       const [data, setData] = React.useState([]);
 
       React.useEffect(() => {
-        Papa.parse("data/web_data.csv", {
+        Papa.parse("./data/web_data.csv", {
           download: true,
           header: true,
           dynamicTyping: true,
@@ -251,7 +251,7 @@ const points = data.slice(0, 24).map((d, i) => {
       React.useEffect(() => {
         const fetchJson = async () => {
           try {
-            const response = await fetch("data/syn_data.json");
+            const response = await fetch("./data/syn_data.json");
             const json = await response.json();
             console.log("R: " + response);
             console.log("J: " + json)
