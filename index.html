@@ -222,17 +222,17 @@ const ForecastBox = ({ data }) => {
             <svg width="200" height="200" className="animate-fade-in">
               <circle
                 cx={center} cy={center} r={outerRadius}
-                stroke="#94a3b8" strokeWidth="3" fill="none"
+                stroke="#94a3b8" strokeWidth="10" fill="none"
               />
               {outerPoints.map((p, i) => (
                 <g key={i} className="animate-fade-in">
                   <circle
                     cx={p.x} cy={p.y} r={pointRadius}
-                    fill={getColor(p.predicted_kwh)} stroke="#fff" strokeWidth="2"
+                    fill={getColor(p.predicted_kwh)} stroke="#fff" strokeWidth="5"
                   />
                   <text
                     x={p.x} y={p.y + 4} textAnchor="middle"
-                    fontSize="8" fill="white" fontWeight="bold"
+                    fontSize="12" fill="white" fontWeight="bold"
                   >
                     {Math.round(p.predicted_kwh * 100) / 100}
                   </text>
