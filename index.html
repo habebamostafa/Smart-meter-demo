@@ -239,25 +239,26 @@ const App = () => {
   const [anomalies, setAnomalies] = React.useState([]);
   const [commModes, setCommModes] = React.useState([]);
 
-  const handleJsonUpload = async (e) => {
-    const file = e.target.files[0];
+ React.useEffect(() => {
+  const fetchJson = async () => {
+    try {
       const response = await fetch("data/syn_data.json");
-      console.log("R: "+response);
-
       const json = await response.json();
-      console.log("J: "+json)
-      setForecast(json.forecast || []);
-    setAnomalies(json.anomalies || []);
-    setCommModes(json.communication_modes || []);
+      console.log("R: "+response);
+      console.log("J: "+ json)
+      //setForecast(json.forecast || []);
+      setAnomalies(json.anomalies || []);
+      //setCommModes(json.communication_modes || []);
+    } catch (error) {
+      console.error("Error loading JSON:", error);
+    }
   };
+
+  fetchJson();
+}, []);
 
   return (
     <div className="space-y-4">
-      <div className="bg-blue-50 p-3 rounded text-center">
-        <input type="file" accept=".json" onChange={handleJsonUpload} />
-        <p className="text-sm text-gray-600 mt-1">Upload decrypted AI JSON</p>
-      </div>
-
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
         <MeterDataTable />
         <ForecastBox data={forecast} />
