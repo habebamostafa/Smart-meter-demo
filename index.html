@@ -101,6 +101,12 @@ const HMAC_WORDARRAY = CryptoJS.enc.Utf8.parse(HMAC_KEY);
 
 const AES_KEY_BYTES = wordArrayToUint8(AES_WORDARRAY);
 const HMAC_KEY_BYTES = wordArrayToUint8(HMAC_WORDARRAY);
+console.log("Keys:", {
+  AES_KEY: AES_KEY,
+  HMAC_KEY: HMAC_KEY,
+  AES_KEY_LENGTH: AES_KEY.length,
+  HMAC_KEY_LENGTH: HMAC_KEY.length
+});
 // 🔐 فك التشفير + التحقق من HMAC
 async function decryptCyberData(encrypted) {
   try {
