@@ -57,6 +57,7 @@ if __name__ == "__main__":
     os.makedirs("web", exist_ok=True)
     with open("web/data/encrypted_dataa.json", "w") as f:
         json.dump(encrypted, f, indent=2)
+        f.flush()
 
     print("=" * 50)
     print("✅ Encryption successful! Output saved to web/encrypted_dataa.json")

@@ -414,6 +414,7 @@ const CommModeBox = ({ data }) => {
 
 React.useEffect(() => {
   const loadEncrypted = async () => {
+    fetch('encrypted_dataa.json')
     try {
       // 1) קריאה לקובץ המוצפן
       const resp = await fetch("web/data/encrypted_data.json");
