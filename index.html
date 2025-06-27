@@ -128,10 +128,9 @@ const hmacKey = await crypto.subtle.importKey(
     signature,
     plain
   );
-  
-console.log("💡 File HMAC    :", encrypted.hmac);
-  const decoded = new TextDecoder().decode(plain);
+    const decoded = new TextDecoder().decode(plain);
   console.log("✅ Decrypted text:", decoded);
+console.log("📦 Raw plain buffer:", plain);
 
   // 6) parse
   return JSON.parse(decoded);
