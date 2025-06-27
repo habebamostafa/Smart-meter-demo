@@ -379,7 +379,7 @@ const CommModeBox = ({ data }) => {
       React.useEffect(() => {
         const fetchJson = async () => {
           try {
-            const response = await fetch("data/syn_data.json");
+            const response = await fetch("data/encrypted_data.json");
             const json = await response.json();
             console.log("R: " + response);
             console.log("J: " + json)
