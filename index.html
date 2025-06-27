@@ -416,15 +416,12 @@ React.useEffect(() => {
   const loadEncrypted = async () => {
     fetch('encrypted_dataa.json')
     try {
-      // 1) קריאה לקובץ המוצפן
       const resp = await fetch("web/data/encrypted_dataa.json");
       if (!resp.ok) throw new Error("Fetch failed: " + resp.status);
       const enc = await resp.json();
 
-      // 2) פענוח + אימות
       const json = await decryptCyberData(enc);
 
-      // 3) העמסת ה-state
       setForecast(
         (json.forecast || []).map(item => ({
           ...item,
