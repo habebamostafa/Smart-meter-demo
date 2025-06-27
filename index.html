@@ -440,22 +440,19 @@ const CommModeBox = ({ data }) => {
 React.useEffect(() => {
   const loadEncrypted = async () => {
     try {
-      const resp = await fetch("web/data/encrypted_dataa.json")
-  .then(r=>r.json())
-  .then(enc=>{
-    const ivBytes = Uint8Array.from(atob(enc.iv), c=>c.charCodeAt(0));
-    console.log("New IV length:", ivBytes.byteLength); // צריך להדפיס 16
-  });
-      
-      const enc = await resp.json();
-      console.log("Encrypted data received:", {
-  iv: enc.iv,
-  hmac: enc.hmac,
-  ciphertext: enc.ciphertext.length
-});
+      // 1) קבל את ה-Response מהקובץ
+      const response = await fetch("web/data/encrypted_dataa.json");
+      if (!response.ok) {
+        throw new Error("فشل في جلب البيانات: " + response.status);
+      }
+
+      // 2) המיר אותו לאובייקט JSON
+      const enc = await response.json();
+
+      // 3) פענח ובדוק HMAC
       const json = await decryptCyberData(enc);
 
-      // معالجة البيانات المفكوكة
+      // 4) המרה ושמירה ב-state
       setForecast(
         (json.forecast || []).map(item => ({
           ...item,
@@ -464,13 +461,15 @@ React.useEffect(() => {
       );
       setAnomalies(json.anomalies || []);
       setCommModes(json.communication_modes || []);
-    } catch (e) {
-      console.error("خطأ في تحميل البيانات المشفرة:", e);
-      // يمكنك إضافة عرض رسالة خطأ للمستخدم هنا
+    } catch (error) {
+      console.error("خطأ في تحميل البيانات المشفرة:", error);
+      // כאן אפשר גם להציג למשתמש הודעת שגיאה בתצוגה
     }
   };
+
   loadEncrypted();
 }, []);
+
 
       return (
         <div className="space-y-9">
