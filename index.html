@@ -401,26 +401,31 @@ const CommModeBox = ({ data }) => {
       const [anomalies, setAnomalies] = React.useState([]);
       const [commModes, setCommModes] = React.useState([]);
 
-      React.useEffect(() => {
-  const fetchJson = async () => {
+React.useEffect(() => {
+  const loadEncrypted = async () => {
     try {
-      const response = await fetch("web/data/encrypted_dataa.json");
-      const enc      = await response.json();
-      const json     = await decryptCyberData(enc, AES_KEY_BYTES, HMAC_KEY_BYTES);
-      console.log("🚀 Decrypted JSON:", json);
+      // 1) קריאה לקובץ המוצפן
+      const resp = await fetch("web/data/encrypted_data.json");
+      if (!resp.ok) throw new Error("Fetch failed: " + resp.status);
+      const enc = await resp.json();
 
+      // 2) פענוח + אימות
+      const json = await decryptCyberData(enc);
+
+      // 3) העמסת ה-state
       setForecast(
-        (json.forecast || []).map(item => ({ 
-          ...item, timestamp: new Date(item.timestamp) 
+        (json.forecast || []).map(item => ({
+          ...item,
+          timestamp: new Date(item.timestamp)
         }))
       );
       setAnomalies(json.anomalies || []);
       setCommModes(json.communication_modes || []);
-    } catch (error) {
-      console.error("Error loading encrypted JSON:", error);
+    } catch (e) {
+      console.error("Error loading encrypted JSON:", e);
     }
   };
-  fetchJson();
+  loadEncrypted();
 }, []);
 
 
