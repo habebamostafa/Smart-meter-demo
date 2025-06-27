@@ -146,15 +146,17 @@ async function decryptCyberData(encryptedData) {
 
   // שאר הקוד נשאר כמו שהוא...
   const plainBytes = new Uint8Array(padded);
-  const valid = await crypto.subtle.verify(
-    "HMAC",
-    hmacKey,
-    signatureBytes,
-    plainBytes
-  );
+  const unpadded = stripPkcs7Padding(plainBytes);
+
+const valid = await crypto.subtle.verify(
+  "HMAC",
+  hmacKey,
+  signatureBytes,
+  plainBytes 
+);
+
   if (!valid) throw new Error("HMAC verification failed – data may be tampered");
 
-  const unpadded = stripPkcs7Padding(plainBytes);
   const jsonText = new TextDecoder().decode(unpadded);
   return JSON.parse(jsonText);
 }

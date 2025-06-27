@@ -29,7 +29,7 @@ def encrypt_data(ai_json):
     ciphertext = encryptor.update(padded_data) + encryptor.finalize()
 
     h = hmac.HMAC(HMAC_KEY, hashes.SHA256(), backend=default_backend())
-    h.update(plaintext)
+    h.update(padded_data)
     signature = h.finalize()
 
     return {
