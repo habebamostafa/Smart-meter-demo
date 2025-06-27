@@ -141,7 +141,7 @@ async function decryptCyberData(encrypted) {
 
     // Verify against the original HMAC
     const valid = await crypto.subtle.verify(
-      "HMAC",
+      "hmac",
       hmacKey,
       signature,
       new TextEncoder().encode(JSON.stringify(JSON.parse(new TextDecoder().decode(padded))))
