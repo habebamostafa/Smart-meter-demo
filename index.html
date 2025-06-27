@@ -129,7 +129,6 @@ const hmacKey = await crypto.subtle.importKey(
     plain
   );
   
-console.log("💡 Expected HMAC:", expB64);
 console.log("💡 File HMAC    :", encrypted.hmac);
   const decoded = new TextDecoder().decode(plain);
   console.log("✅ Decrypted text:", decoded);
