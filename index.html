@@ -108,7 +108,7 @@ console.log("Keys:", {
   HMAC_KEY_LENGTH: HMAC_KEY.length
 });
 // 🔐 فك التشفير + التحقق من HMAC
-async function _decryptCyberData(encryptedData) {
+async function decryptCyberData(encryptedData) {
   // 1) parse out your IV, ciphertext and HMAC from the incoming JSON
   const iv            = hexToArrayBuffer(encryptedData.iv);
   const cipherBytes   = hexToArrayBuffer(encryptedData.ciphertext);
