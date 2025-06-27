@@ -78,36 +78,52 @@
 
   <!--  React App Script -->
   <script defer type="text/babel">
-    const AES_KEY_BYTES  = new Uint8Array(Array(32).fill(0x78)); // x*32
-const HMAC_KEY_BYTES = new Uint8Array(Array(32).fill(0x79)); // y*32
-async function decryptCyberData(encrypted, aesKey, hmacKey) {
-  const toUint8 = b64 => Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
+const toUint8 = b64 => Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
+
+// 🔑 מפתחות (בייטים) שווים לאלו שב־Python
+const AES_KEY_BYTES  = new Uint8Array(32).fill(0x78); // 'x'
+const HMAC_KEY_BYTES = new Uint8Array(32).fill(0x79); // 'y'
+
+// 🔐 decrypt + verify HMAC
+async function decryptCyberData(encrypted) {
   const iv         = toUint8(encrypted.iv);
   const ciphertext = toUint8(encrypted.ciphertext);
+  const signature  = toUint8(encrypted.hmac);
 
-  const key = await crypto.subtle.importKey(
-    "raw", aesKey, { name: "AES-CBC" }, false, ["decrypt"]
+  // 1) ייבוא מפתח AES
+  const aesKey = await crypto.subtle.importKey(
+    "raw", AES_KEY_BYTES, { name: "AES-CBC" }, false, ["decrypt"]
   );
+
+  // 2) פיצוח AES-CBC
   const padded = await crypto.subtle.decrypt(
-    { name: "AES-CBC", iv }, key, ciphertext
+    { name: "AES-CBC", iv }, aesKey, ciphertext
   );
 
-  // הסרת PKCS7 padding
+  // 3) הסרת PKCS7 padding
   const arr = new Uint8Array(padded);
   const padLen = arr[arr.length - 1];
   const plain = arr.slice(0, arr.length - padLen);
 
-  // המרת הביינרי למחרוזת JSON
+  // 4) אימות HMAC-SHA256
+  const hmacKey = await crypto.subtle.importKey(
+    "raw", HMAC_KEY_BYTES, { name: "HMAC", hash: "SHA-256" }, false, ["verify"]
+  );
+  const valid = await crypto.subtle.verify(
+    "HMAC",
+    hmacKey,
+    signature,
+    plain
+  );
+  if (!valid) throw new Error("HMAC verification failed");
+
+  // 5) המרת בייטים למחרוזת JSON
   const decoded = new TextDecoder().decode(plain);
+  console.log("✅ Decrypted text:", decoded);
 
-  // ✅ שורה חשובה: ניקוי null-bytes ושורות ריקות
-  const clean = decoded.replace(/\0+$/g, '').trim();
-  console.log("✅ Cleaned payload:", clean);
-
-  // parse נקי
-  return JSON.parse(clean);
+  // 6) parse
+  return JSON.parse(decoded);
 }
-
     
     
     // Component 1: Meter Data Table
