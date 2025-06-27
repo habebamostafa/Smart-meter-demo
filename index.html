@@ -107,6 +107,15 @@ console.log("Keys:", {
   AES_KEY_LENGTH: AES_KEY.length,
   HMAC_KEY_LENGTH: HMAC_KEY.length
 });
+function hexToArrayBuffer(hex) {
+  if (hex.length % 2 !== 0) throw new Error("Invalid hex string");
+  const len = hex.length / 2;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+  }
+  return bytes.buffer;
+}
 // 🔐 فك التشفير + التحقق من HMAC
 async function decryptCyberData(encryptedData) {
   // 1) parse out your IV, ciphertext and HMAC from the incoming JSON
