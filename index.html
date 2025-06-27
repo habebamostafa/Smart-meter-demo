@@ -220,8 +220,8 @@ const ForecastBox = ({ data }) => {
   const pointRadius = 18;            
   const fontSize    = 15;            
 
-  const firstHalf  = data.slice(0, 13).map((d, i) => ({ ...d, hour: i }));
-  const secondHalf = data.slice(13, 25).map((d, i) => ({ ...d, hour: i + 13 }));
+  const firstHalf  = data.slice(0, 12).map((d, i) => ({ ...d, hour: i }));
+  const secondHalf = data.slice(12, 25).map((d, i) => ({ ...d, hour: i + 13 }));
 
   const computePoints = (items, radius) =>
     items.map(p => {
