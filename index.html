@@ -78,6 +78,7 @@
 
   <!--  React App Script -->
   <script defer type="text/babel">
+// 1) פונקציית העזר להמרת Base64 ל־Uint8Array
 const toUint8 = b64 => {
   try {
     return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
@@ -87,118 +88,118 @@ const toUint8 = b64 => {
   }
 };
 
-// 🔑 مفاتيح التشفير
-const AES_KEY = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; // 32 حرف (256 بت)
-const HMAC_KEY = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"; // 32 حرف (256 بت)
-
-// تحويل المفاتيح إلى Uint8Array
-const AES_KEY_BYTES = new TextEncoder().encode(AES_KEY);
-const HMAC_KEY_BYTES = new TextEncoder().encode(HMAC_KEY);
-
 let aesKey, hmacKey;
 
+// 2) ייבוא המפתחות
 async function initKeys() {
-  try {
-    aesKey = await crypto.subtle.importKey(
-      "raw",
-      AES_KEY_BYTES,
-      { name: "AES-CBC" },
-      false,
-      ["decrypt"]
-    );
-
-    hmacKey = await crypto.subtle.importKey(
-      "raw",
-      HMAC_KEY_BYTES,
-      { name: "HMAC", hash: { name: "SHA-256" } },
-      false,
-      ["verify"]
-    );
-  } catch (error) {
-    console.error("خطأ في تهيئة المفاتيح:", error);
-    throw error;
-  }
+  aesKey = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(AES_KEY),
+    { name: "AES-CBC" },
+    false,
+    ["decrypt"]
+  );
+  hmacKey = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(HMAC_KEY),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["verify"]
+  );
 }
 
+// 3) הפונקציה המעודכנת לפענוח+בדיקת HMAC+JSON.parse
 async function decryptCyberData(encrypted) {
-  try {
-    if (!aesKey || !hmacKey) {
-      await initKeys();
-    }
+  // 3.1) וודא שמפתחות קיימים
+  if (!aesKey || !hmacKey) await initKeys();
 
-    // 1. التحقق من البيانات المدخلة
-    if (!encrypted?.iv || !encrypted?.ciphertext || !encrypted?.hmac) {
-      throw new Error("بيانات التشفير ناقصة");
-    }
+  // 3.2) המרת Base64 ל־Bytes
+  const iv         = toUint8(encrypted.iv);
+  const ciphertext = toUint8(encrypted.ciphertext);
+  const signature  = toUint8(encrypted.hmac);
 
-    // 2. تحويل البيانات من Base64
-    const iv = toUint8(encrypted.iv);
-    const ciphertext = toUint8(encrypted.ciphertext);
-    const receivedHmac = toUint8(encrypted.hmac);
+  console.log("🔍 lengths:", {
+    iv: iv.length,
+    ciphertext: ciphertext.length,
+    hmac: signature.length
+  });
 
-    console.log("أطوال البيانات:", {
-      iv: iv.length,
-      ciphertext: ciphertext.length,
-      hmac: receivedHmac.length
-    });
+  // 3.3) פענוח AES-CBC
+  const paddedBuf = await crypto.subtle.decrypt(
+    { name: "AES-CBC", iv },
+    aesKey,
+    ciphertext
+  );
+  const padded = new Uint8Array(paddedBuf);
 
-    // 3. فك التشفير
-    const decrypted = await crypto.subtle.decrypt(
-      { name: "AES-CBC", iv },
-      aesKey,
-      ciphertext
-    );
-
-    // 4. إزالة Padding (PKCS7)
-    const decryptedBytes = new Uint8Array(decrypted);
-    const padLength = decryptedBytes[decryptedBytes.length - 1];
-    
-    // تحقق من صحة طول الحشو
-    if (padLength > 16 || padLength < 1) {
-      throw new Error(`طول الحشو غير صالح: ${padLength}`);
-    }
-    
-    const plaintextBytes = decryptedBytes.slice(0, decryptedBytes.length - padLength);
-    const plaintext = new TextDecoder().decode(plaintextBytes);
-
-    console.log("البيانات المفكوكة:", plaintext.substring(0, 100) + "...");
-
-    // 5. التحقق من صحة JSON
-    let parsedData;
-    try {
-      parsedData = JSON.parse(plaintext);
-    } catch (e) {
-      console.error("بيانات JSON غير صالحة:", plaintext);
-      throw new Error("فشل تحليل JSON: " + e.message);
-    }
-
-    // 6. التحقق من HMAC
-    const valid = await crypto.subtle.verify(
-      "HMAC",
-      hmacKey,
-      receivedHmac,
-      plaintextBytes
-    );
-
-    if (!valid) {
-      throw new Error("فشل التحقق من HMAC");
-    }
-
-    return parsedData;
-
-  } catch (error) {
-    console.error("تفاصيل الخطأ في فك التشفير:", {
-      message: error.message,
-      stack: error.stack,
-      encryptedData: {
-        iv: encrypted?.iv?.substring(0, 10) + "...",
-        ciphertext: encrypted?.ciphertext?.length,
-        hmac: encrypted?.hmac?.substring(0, 10) + "..."
-      }
-    });
-    throw error;
+  // 3.4) הסרת PKCS#7 Padding
+  const padLen = padded[padded.length - 1];
+  if (padLen < 1 || padLen > 16) {
+    throw new Error(`طول الحشو غير صالح: ${padLen}`);
   }
+  const plainBytes = padded.subarray(0, padded.length - padLen);
+
+  // 3.5) המרה למחרוזת + trim
+  let plaintext = new TextDecoder().decode(plainBytes);
+  console.log("▶️ decrypted raw:", plaintext);
+  plaintext = plaintext.trim();
+  console.log("▶️ decrypted trimmed:", plaintext);
+
+  // 3.6) ניסיון JSON.parse עם טיפול בשגיאות
+  let data;
+  try {
+    data = JSON.parse(plaintext);
+  } catch (e) {
+    console.error("بيانات JSON غير صالحة:", plaintext);
+    throw new Error("بيانات غير صالحة بعد فك التشفير: " + e.message);
+  }
+
+  // 3.7) בדיקת HMAC על ה־plaintext עצמו
+  const ok = await crypto.subtle.verify(
+    "HMAC",
+    hmacKey,
+    signature,
+    plainBytes
+  );
+  if (!ok) {
+    throw new Error("فشل التحقق من HMAC على النص");
+  }
+
+  return data;
 }
+
+// 4) הפונקציה המעודכנת לטעינת ה־JSON, לוגים, ופול סדר העבודה ב־React
+useEffect(() => {
+  const loadEncrypted = async () => {
+    try {
+      const response = await fetch("web/data/encrypted_dataa.json");
+      if (!response.ok) {
+        throw new Error("فشل في جلب البيانات: " + response.status);
+      }
+
+      const enc = await response.json();
+      console.log("🔐 Encrypted payload:", {
+        iv: enc.iv,
+        hmac: enc.hmac,
+        ciphertextChars: enc.ciphertext.length
+      });
+
+      const json = await decryptCyberData(enc);
+
+      setForecast(
+        (json.forecast || []).map(item => ({
+          ...item,
+          timestamp: new Date(item.timestamp)
+        }))
+      );
+      setAnomalies(json.anomalies || []);
+      setCommModes(json.communication_modes || []);
+    } catch (error) {
+      console.error("خطأ في تحميل البيانات المشفرة:", error);
+    }
+  };
+  loadEncrypted();
+}, []);
 
     
     
