@@ -100,7 +100,7 @@ const HMAC_KEY_BYTES = wordArrayToUint8(HMAC_WORDARRAY);
 async function decryptCyberData(encrypted) {
   const iv         = wordArrayToUint8(encrypted.iv);
   const ciphertext = wordArrayToUint8(encrypted.ciphertext);
-  const signature  =wordArrayToUint8(encrypted.hmac);
+  const signature  = wordArrayToUint8(encrypted.hmac);
 
   const aesKey = await crypto.subtle.importKey(
     "raw", AES_KEY_BYTES, { name: "AES-CBC" }, false, ["decrypt"]
@@ -114,30 +114,26 @@ async function decryptCyberData(encrypted) {
   const padLen = arr[arr.length - 1];
   const plain = arr.slice(0, arr.length - padLen);
 
-const hmacKey = await crypto.subtle.importKey(
-  "raw",
-  HMAC_KEY_BYTES,
-  { name: "HMAC", hash: { name: "SHA-256" } },  
-  false,
-  ["verify"]
-);
-
-  const valid = await crypto.subtle.verify(
-    "HMAC",
-    hmacKey,
-    signature,
-    plain
+  const hmacKey = await crypto.subtle.importKey(
+    "raw", HMAC_KEY_BYTES, { name: "HMAC", hash: { name: "SHA-256" } },
+    false, ["verify"]
   );
-try {
-  const decoded = new TextDecoder().decode(plain);
-  console.log("✅ Decrypted text:", decoded);
-  return JSON.parse(decoded);
-} catch (e) {
-  console.error("❌ JSON parsing failed:", e.message);
-  document.body.innerHTML += `<pre class="text-red-600 p-2">${decoded}</pre>`;
-}
-}
 
+  const valid = await crypto.subtle.verify("HMAC", hmacKey, signature, plain);
+  if (!valid) throw new Error("HMAC verification failed");
+
+  // ✨ إصلاح هنا: تعريف decoded قبل try/catch
+  const decoded = new TextDecoder().decode(plain);
+
+  try {
+    console.log("✅ Decrypted text:", decoded);
+    return JSON.parse(decoded);
+  } catch (err) {
+    console.error("❌ JSON parsing failed:", err.message);
+    document.body.innerHTML += `<pre class="text-red-600 p-2">${decoded}</pre>`;
+    throw err;
+  }
+}
 
     
     
