@@ -106,9 +106,14 @@ async function decryptCyberData(encrypted) {
   const plain = arr.slice(0, arr.length - padLen);
 
   // 4) אימות HMAC-SHA256
-  const hmacKey = await crypto.subtle.importKey(
-    "raw", HMAC_KEY_BYTES, { name: "HMAC", hash: "SHA-256" }, false, ["verify"]
-  );
+const hmacKey = await crypto.subtle.importKey(
+  "raw",
+  HMAC_KEY_BYTES,
+  { name: "HMAC", hash: { name: "SHA-256" } },  // ✅ עכשיו תקין
+  false,
+  ["verify"]
+);
+
   const valid = await crypto.subtle.verify(
     "HMAC",
     hmacKey,
