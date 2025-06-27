@@ -113,63 +113,64 @@ async function initKeys() {
 
 // 3) הפונקציה המעודכנת לפענוח+בדיקת HMAC+JSON.parse
 async function decryptCyberData(encrypted) {
-  // 3.1) וודא שמפתחות קיימים
-  if (!aesKey || !hmacKey) await initKeys();
+  // וודאו שהמפתחות קיימים...
+  if (!aesKey || !hmacKey) {
+    await initKeys();
+  }
 
-  // 3.2) המרת Base64 ל־Bytes
-  const iv         = toUint8(encrypted.iv);
-  const ciphertext = toUint8(encrypted.ciphertext);
-  const signature  = toUint8(encrypted.hmac);
+  // 1) המרת Base64 → Uint8Array
+  const ivBytes        = toUint8(encrypted.iv);
+  const ciphertext     = toUint8(encrypted.ciphertext);
+  const signatureBytes = toUint8(encrypted.hmac);
 
-  console.log("🔍 lengths:", {
-    iv: iv.length,
-    ciphertext: ciphertext.length,
-    hmac: signature.length
+  console.log("Lengths:", {
+    iv: ivBytes.length,             // צריך להיות 16
+    ciphertext: ciphertext.length,  // צריך להיות כפולה של 16
+    hmac: signatureBytes.length     // צריך להיות 32
   });
 
-  // 3.3) פענוח AES-CBC
-  const paddedBuf = await crypto.subtle.decrypt(
-    { name: "AES-CBC", iv },
+  // 2) בדיקות בסיסיות
+  if (ivBytes.length !== 16) {
+    throw new Error(`Unexpected IV length ${ivBytes.length}, must be 16`);
+  }
+  if (ciphertext.length % 16 !== 0) {
+    throw new Error(`Ciphertext length ${ciphertext.length} is not a multiple of 16`);
+  }
+
+  // 3) AES-CBC decrypt
+  const decryptedBuf = await crypto.subtle.decrypt(
+    { name: "AES-CBC", iv: ivBytes },
     aesKey,
     ciphertext
   );
-  const padded = new Uint8Array(paddedBuf);
+  const decrypted = new Uint8Array(decryptedBuf);
 
-  // 3.4) הסרת PKCS#7 Padding
-  const padLen = padded[padded.length - 1];
+  // 4) הסרת PKCS#7 Padding
+  const padLen = decrypted[decrypted.length - 1];
   if (padLen < 1 || padLen > 16) {
-    throw new Error(`طول الحشو غير صالح: ${padLen}`);
+    throw new Error(`Invalid padding length: ${padLen}`);
   }
-  const plainBytes = padded.subarray(0, padded.length - padLen);
+  const plainBytes = decrypted.subarray(0, decrypted.length - padLen);
 
-  // 3.5) המרה למחרוזת + trim
-  let plaintext = new TextDecoder().decode(plainBytes);
-  console.log("▶️ decrypted raw:", plaintext);
-  plaintext = plaintext.trim();
-  console.log("▶️ decrypted trimmed:", plaintext);
+  // 5) JSON.parse עם לוג
+  const plaintext = new TextDecoder().decode(plainBytes);
+  console.log("📜 Plaintext:", plaintext);
+  const data = JSON.parse(plaintext);
 
-  // 3.6) ניסיון JSON.parse עם טיפול בשגיאות
-  let data;
-  try {
-    data = JSON.parse(plaintext);
-  } catch (e) {
-    console.error("بيانات JSON غير صالحة:", plaintext);
-    throw new Error("بيانات غير صالحة بعد فك التشفير: " + e.message);
-  }
-
-  // 3.7) בדיקת HMAC על ה־plaintext עצמו
+  // 6) בדיקת HMAC על ה־plaintext (כפי שחישבתם בפייתון)
   const ok = await crypto.subtle.verify(
     "HMAC",
     hmacKey,
-    signature,
+    signatureBytes,
     plainBytes
   );
   if (!ok) {
-    throw new Error("فشل التحقق من HMAC على النص");
+    throw new Error("HMAC verification failed – data may be tampered");
   }
 
   return data;
 }
+
 // 4) הפונקציה המעודכנת לטעינת ה־JSON, לוגים, ופול סדר העבודה ב־React
     
     
