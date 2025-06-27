@@ -101,6 +101,9 @@ async function decryptCyberData(encrypted, aesKey, hmacKey) {
   const decoded = new TextDecoder().decode(plain);
   // parse
   return JSON.parse(decoded);
+  const clean = decoded.replace(/\\0+$/g, '').trim();
+  console.log("✅ Cleaned payload:", clean);
+  return JSON.parse(clean);
 }
     
     
