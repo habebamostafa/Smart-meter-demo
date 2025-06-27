@@ -91,9 +91,8 @@ function wordArrayToUint8(wordArray) {
   }
   return toUint8(wordArray);
 }
-let aesKey, hmacKey;
 
-// 🔑 مفاتيح التشفير (يجب استبدالها بمفاتيحك الفعلية)
+// 🔑 مفاتيح التشفير
 const AES_KEY = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; // 32 حرف (256 بت)
 const HMAC_KEY = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"; // 32 حرف (256 بت)
 
@@ -102,65 +101,84 @@ const HMAC_WORDARRAY = CryptoJS.enc.Utf8.parse(HMAC_KEY);
 
 const AES_KEY_BYTES = wordArrayToUint8(AES_WORDARRAY);
 const HMAC_KEY_BYTES = wordArrayToUint8(HMAC_WORDARRAY);
-console.log("Keys:", {
-  AES_KEY: AES_KEY,
-  HMAC_KEY: HMAC_KEY,
-  AES_KEY_LENGTH: AES_KEY.length,
-  HMAC_KEY_LENGTH: HMAC_KEY.length
-});
-function hexToArrayBuffer(hex) {
-  if (hex.length % 2 !== 0) throw new Error("Invalid hex string");
-  const len = hex.length / 2;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
-  }
-  return bytes.buffer;
+
+// دالة مساعدة لإزالة Padding
+function stripPkcs7Padding(data) {
+  const padLength = data[data.length - 1];
+  return data.slice(0, data.length - padLength);
 }
+
 // 🔐 فك التشفير + التحقق من HMAC
 async function decryptCyberData(encryptedData) {
-  // המרת IV ו־ciphertext ל־Uint8Array במקום ArrayBuffer נקי
-  const ivBytes         = new Uint8Array(hexToArrayBuffer(encryptedData.iv));
-  const cipherBytesArr  = new Uint8Array(hexToArrayBuffer(encryptedData.ciphertext));
-  const signatureBytes  = new Uint8Array(hexToArrayBuffer(encryptedData.hmac));
+  try {
+    // 1. تحويل البيانات من Base64
+    const iv = toUint8(encryptedData.iv);
+    const ciphertext = toUint8(encryptedData.ciphertext);
+    const signature = toUint8(encryptedData.hmac);
 
-  // לוג לבדיקת אורכים
-  console.log("🔍 IV length:", ivBytes.byteLength, "bytes (should be 16)");
-  console.log("🔍 Ciphertext length:", cipherBytesArr.byteLength, "bytes (must be multiple of 16)");
-  console.log("🔍 AES key length:", AES_KEY_BYTES.length, "bytes");
+    // 2. التحقق من طول IV
+    console.log("IV length:", iv.length);
+    if (iv.length !== 16) {
+      throw new Error(`طول IV غير صحيح: ${iv.length} (يجب أن يكون 16 بايت)`);
+    }
 
-  // וידוא בסיסי
-  if (ivBytes.byteLength !== 16) {
-    throw new Error(`Unexpected IV length ${ivBytes.byteLength}, must be 16`);
+    // 3. استيراد المفاتيح
+    const aesKey = await crypto.subtle.importKey(
+      "raw",
+      AES_KEY_BYTES,
+      { name: "AES-CBC" },
+      false,
+      ["decrypt"]
+    );
+
+    const hmacKey = await crypto.subtle.importKey(
+      "raw",
+      HMAC_KEY_BYTES,
+      { name: "HMAC", hash: { name: "SHA-256" } },
+      false,
+      ["verify"]
+    );
+
+    // 4. فك التشفير
+    const decrypted = await crypto.subtle.decrypt(
+      { name: "AES-CBC", iv },
+      aesKey,
+      ciphertext
+    );
+
+    // 5. إزالة Padding
+    const decryptedBytes = new Uint8Array(decrypted);
+    const plaintextBytes = stripPkcs7Padding(decryptedBytes);
+
+    // 6. التحقق من HMAC
+    const valid = await crypto.subtle.verify(
+      "HMAC",
+      hmacKey,
+      signature,
+      plaintextBytes
+    );
+
+    if (!valid) {
+      throw new Error("فشل التحقق من HMAC - البيانات قد تكون معيبة");
+    }
+
+    // 7. تحويل إلى JSON
+    const plaintext = new TextDecoder().decode(plaintextBytes);
+    return JSON.parse(plaintext);
+
+  } catch (error) {
+    console.error("تفاصيل الخطأ:", {
+      message: error.message,
+      stack: error.stack,
+      inputData: {
+        ivLength: encryptedData.iv?.length,
+        ciphertextLength: encryptedData.ciphertext?.length,
+        hmacLength: encryptedData.hmac?.length
+      }
+    });
+    throw error;
   }
-  if (cipherBytesArr.byteLength % 16 !== 0) {
-    throw new Error(`Ciphertext length ${cipherBytesArr.byteLength} is not a multiple of AES block size`);
-  }
-
-  // קריאה ל־decrypt עם ה־Uint8Array
-  const padded = await crypto.subtle.decrypt(
-    { name: "AES-CBC", iv: ivBytes },
-    aesKey,
-    cipherBytesArr
-  );
-
-  // שאר הקוד נשאר כמו שהוא...
-  const plainBytes = new Uint8Array(padded);
-  const unpadded = stripPkcs7Padding(plainBytes);
-
-const valid = await crypto.subtle.verify(
-  "HMAC",
-  hmacKey,
-  signatureBytes,
-  plainBytes 
-);
-
-  if (!valid) throw new Error("HMAC verification failed – data may be tampered");
-
-  const jsonText = new TextDecoder().decode(unpadded);
-  return JSON.parse(jsonText);
 }
-
 
     
     
