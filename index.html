@@ -95,59 +95,64 @@ function wordArrayToUint8(wordArray) {
 // 🔑 مفاتيح التشفير (يجب استبدالها بمفاتيحك الفعلية)
 const AES_KEY = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; // 32 حرف (256 بت)
 const HMAC_KEY = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"; // 32 حرف (256 بت)
+
 const AES_WORDARRAY = CryptoJS.enc.Utf8.parse(AES_KEY);
 const HMAC_WORDARRAY = CryptoJS.enc.Utf8.parse(HMAC_KEY);
+
 const AES_KEY_BYTES = wordArrayToUint8(AES_WORDARRAY);
 const HMAC_KEY_BYTES = wordArrayToUint8(HMAC_WORDARRAY);
-
 // 🔐 فك التشفير + التحقق من HMAC
 async function decryptCyberData(encrypted) {
   try {
-    // تحويل البيانات من Base64 إلى Uint8Array
-    const iv = CryptoJS.enc.Base64.parse(encrypted.iv).toString(CryptoJS.enc.Latin1);
-    const ciphertext = CryptoJS.enc.Base64.parse(encrypted.ciphertext).toString(CryptoJS.enc.Latin1);
-    const signature = CryptoJS.enc.Base64.parse(encrypted.hmac).toString(CryptoJS.enc.Latin1);
+    // 1. تحويل IV من Base64 إلى Uint8Array (16 بايت)
+    const iv = Uint8Array.from(atob(encrypted.iv), c => c.charCodeAt(0));
+    
+    // 2. تحويل ciphertext من Base64 إلى Uint8Array
+    const ciphertext = Uint8Array.from(atob(encrypted.ciphertext), c => c.charCodeAt(0));
+    
+    // 3. تحويل HMAC من Base64 إلى Uint8Array
+    const signature = Uint8Array.from(atob(encrypted.hmac), c => c.charCodeAt(0));
 
-    // تحويل المفاتيح إلى تنسيق مناسب
+    // 4. استيراد مفتاح AES
     const aesKey = await crypto.subtle.importKey(
-      "raw",
-      new TextEncoder().encode(AES_KEY),
-      { name: "AES-CBC" },
-      false,
+      "raw", 
+      AES_KEY_BYTES, 
+      { name: "AES-CBC" }, 
+      false, 
       ["decrypt"]
     );
 
-    // فك التشفير
-    const decrypted = await crypto.subtle.decrypt(
-      { name: "AES-CBC", iv: new TextEncoder().encode(iv) },
-      aesKey,
-      new TextEncoder().encode(ciphertext)
+    // 5. فك التشفير
+    const padded = await crypto.subtle.decrypt(
+      { name: "AES-CBC", iv }, 
+      aesKey, 
+      ciphertext
     );
 
-    // إزالة الحشو (Padding)
-    const decryptedArray = new Uint8Array(decrypted);
-    const padLength = decryptedArray[decryptedArray.length - 1];
-    const plaintextArray = decryptedArray.slice(0, decryptedArray.length - padLength);
-    const plaintext = new TextDecoder().decode(plaintextArray);
+    // 6. إزالة الحشو (PKCS7 Padding)
+    const arr = new Uint8Array(padded);
+    const padLen = arr[arr.length - 1];
+    const plain = arr.slice(0, arr.length - padLen);
+    const plaintext = new TextDecoder().decode(plain);
 
-    // التحقق من HMAC
+    // 7. التحقق من HMAC
     const hmacKey = await crypto.subtle.importKey(
       "raw",
-      new TextEncoder().encode(HMAC_KEY),
+      HMAC_KEY_BYTES,
       { name: "HMAC", hash: { name: "SHA-256" } },
       false,
       ["verify"]
     );
 
-    const isValid = await crypto.subtle.verify(
+    const valid = await crypto.subtle.verify(
       "HMAC",
       hmacKey,
-      new TextEncoder().encode(signature),
-      new TextEncoder().encode(plaintext)
+      signature,
+      plain
     );
 
-    if (!isValid) {
-      throw new Error("HMAC verification failed");
+    if (!valid) {
+      throw new Error("HMAC verification failed - البيانات قد تكون معيبة أو معدلة");
     }
 
     return JSON.parse(plaintext);
@@ -156,7 +161,6 @@ async function decryptCyberData(encrypted) {
     throw error;
   }
 }
-
 
     
     
