@@ -78,24 +78,24 @@
 
   <!--  React App Script -->
   <script defer type="text/babel">
-    const toUint8 = b64 => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+const toUint8 = b64 => Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
 
-    function wordArrayToUint8(wordArray) {
-  // אם זה WordArray
+function wordArrayToUint8(wordArray) {
   if (wordArray.words) {
     const { words, sigBytes } = wordArray;
     const u8 = new Uint8Array(sigBytes);
     for (let i = 0; i < sigBytes; i++) {
-      const byte = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
-      u8[i] = byte;
+      u8[i] = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
     }
     return u8;
   }
-  // אחרת מניחים מחרוזת Base64
   return toUint8(wordArray);
 }
-const AES_KEY_BYTES  = wordArrayToUint8(CryptoJS.enc.Utf8.parse("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"));
-const HMAC_KEY_BYTES = wordArrayToUint8(CryptoJS.enc.Utf8.parse("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"));
+
+const AES_WORDARRAY  = CryptoJS.enc.Utf8.parse("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+const HMAC_WORDARRAY = CryptoJS.enc.Utf8.parse("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy");
+const AES_KEY_BYTES  = wordArrayToUint8(AES_WORDARRAY);
+const HMAC_KEY_BYTES = wordArrayToUint8(HMAC_WORDARRAY);
 // 🔐 decrypt + verify HMAC
 async function decryptCyberData(encrypted) {
   const iv         = wordArrayToUint8(encrypted.iv);
