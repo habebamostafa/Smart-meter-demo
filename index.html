@@ -128,13 +128,17 @@ const hmacKey = await crypto.subtle.importKey(
     signature,
     plain
   );
-    const decoded = new TextDecoder().decode(plain);
+try {
+  const decoded = new TextDecoder().decode(plain);
   console.log("✅ Decrypted text:", decoded);
-console.log("📦 Raw plain buffer:", plain);
-
-  // 6) parse
   return JSON.parse(decoded);
+} catch (e) {
+  console.error("❌ JSON parsing failed:", e.message);
+  document.body.innerHTML += `<pre class="text-red-600 p-2">${decoded}</pre>`;
 }
+}
+
+
     
     
     // Component 1: Meter Data Table
