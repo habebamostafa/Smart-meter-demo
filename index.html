@@ -78,14 +78,27 @@
 
   <!--  React App Script -->
   <script defer type="text/babel">
-const AES_KEY_BYTES  = CryptoJS.enc.Utf8.parse("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"); // 'x'
-const HMAC_KEY_BYTES = CryptoJS.enc.Utf8.parse("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"); // 'y'
-
+    function wordArrayToUint8(wordArray) {
+  // אם זה WordArray
+  if (wordArray.words) {
+    const { words, sigBytes } = wordArray;
+    const u8 = new Uint8Array(sigBytes);
+    for (let i = 0; i < sigBytes; i++) {
+      const byte = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
+      u8[i] = byte;
+    }
+    return u8;
+  }
+  // אחרת מניחים מחרוזת Base64
+  return toUint8(wordArray);
+}
+const AES_KEY_BYTES  = wordArrayToUint8(CryptoJS.enc.Utf8.parse("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"));
+const HMAC_KEY_BYTES = wordArrayToUint8(CryptoJS.enc.Utf8.parse("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"));
 // 🔐 decrypt + verify HMAC
 async function decryptCyberData(encrypted) {
-  const iv         = encrypted.iv;
-  const ciphertext = encrypted.ciphertext;
-  const signature  =encrypted.hmac;
+  const iv         = wordArrayToUint8(encrypted.iv);
+  const ciphertext = wordArrayToUint8(encrypted.ciphertext);
+  const signature  =wordArrayToUint8(encrypted.hmac);
 
   const aesKey = await crypto.subtle.importKey(
     "raw", AES_KEY_BYTES, { name: "AES-CBC" }, false, ["decrypt"]
