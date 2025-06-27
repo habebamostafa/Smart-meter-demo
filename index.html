@@ -414,7 +414,7 @@ const CommModeBox = ({ data }) => {
 
 React.useEffect(() => {
   const loadEncrypted = async () => {
-    fetch('encrypted_dataa.json')
+    fetch('web/data/encrypted_dataa.json')
     try {
       const resp = await fetch("web/data/encrypted_dataa.json");
       if (!resp.ok) throw new Error("Fetch failed: " + resp.status);
