@@ -80,37 +80,29 @@
   <script defer type="text/babel">
     const AES_KEY_BYTES  = new Uint8Array(Array(32).fill(0x78)); // x*32
 const HMAC_KEY_BYTES = new Uint8Array(Array(32).fill(0x79)); // y*32
-
-    async function decryptCyberData(encrypted, aesKeyBytes, hmacKeyBytes) {
+async function decryptCyberData(encrypted, aesKey, hmacKey) {
   const toUint8 = b64 => Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
   const iv         = toUint8(encrypted.iv);
   const ciphertext = toUint8(encrypted.ciphertext);
 
-  const key = await crypto.subtle.importKey("raw", aesKeyBytes, { name: "AES-CBC" }, false, ["decrypt"]);
-  const padded = await crypto.subtle.decrypt({ name: "AES-CBC", iv }, key, ciphertext);
-
-  // إزالة البادينج
-  const data = new Uint8Array(padded);
-  const padLen = data[data.length - 1];
-  const plain = data.slice(0, data.length - padLen);
-
-  // حوله لنص
+  // افتح المفتاح
+  const key = await crypto.subtle.importKey(
+    "raw", aesKey, { name: "AES-CBC" }, false, ["decrypt"]
+  );
+  // فك التشفير
+  const padded = await crypto.subtle.decrypt(
+    { name: "AES-CBC", iv }, key, ciphertext
+  );
+  // إزالة PKCS7 padding
+  const arr = new Uint8Array(padded);
+  const padLen = arr[arr.length - 1];
+  const plain = arr.slice(0, arr.length - padLen);
+  // نص JSON مفكوك
   const decoded = new TextDecoder().decode(plain);
-
-  // —— هنا ضيفي اللوق 👇
-  console.log("🔓 Decrypted payload:", decoded);
-
-  // حاول تعمله JSON.parse
-  try {
-    return JSON.parse(decoded);
-  } catch (err) {
-    console.error("❌ JSON.parse failed:", err);
-    // وأعيدي طباعة النص كامل عشان تشوفيه في الكونسول
-    console.error("🔍 Full decoded text:", decoded);
-    throw err;
-  }
+  // parse
+  return JSON.parse(decoded);
 }
-
+    
     
     // Component 1: Meter Data Table
     const MeterDataTable = () => {
