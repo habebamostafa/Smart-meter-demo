@@ -78,6 +78,8 @@
 
   <!--  React App Script -->
   <script defer type="text/babel">
+    const toUint8 = b64 => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+
     function wordArrayToUint8(wordArray) {
   // אם זה WordArray
   if (wordArray.words) {
