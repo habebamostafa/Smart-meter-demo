@@ -79,6 +79,9 @@
   <!--  React App Script -->
   <script defer type="text/babel">
 // 1) פונקציית העזר להמרת Base64 ל־Uint8Array
+const AES_KEY  = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+  const HMAC_KEY = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
+
 const toUint8 = b64 => {
   try {
     return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
