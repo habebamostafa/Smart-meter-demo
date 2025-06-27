@@ -80,8 +80,8 @@
   <script defer type="text/babel">
 const toUint8 = b64 => Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
 
-const AES_KEY_BYTES  = new Uint8Array(32).fill(0x78); // 'x'
-const HMAC_KEY_BYTES = new Uint8Array(32).fill(0x79); // 'y'
+const AES_KEY_BYTES  = CryptoJS.enc.Utf8.parse("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"); // 'x'
+const HMAC_KEY_BYTES = CryptoJS.enc.Utf8.parse("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"); // 'y'
 
 // 🔐 decrypt + verify HMAC
 async function decryptCyberData(encrypted) {
