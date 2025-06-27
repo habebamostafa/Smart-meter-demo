@@ -108,71 +108,40 @@ console.log("Keys:", {
   HMAC_KEY_LENGTH: HMAC_KEY.length
 });
 // 🔐 فك التشفير + التحقق من HMAC
-async function decryptCyberData(encrypted) {
-  try {
-    // 1. Convert from Base64
-    const iv = Uint8Array.from(atob(encrypted.iv), c => c.charCodeAt(0));
-    const ciphertext = Uint8Array.from(atob(encrypted.ciphertext), c => c.charCodeAt(0));
-    const signature = Uint8Array.from(atob(encrypted.hmac), c => c.charCodeAt(0));
+async function _decryptCyberData(encryptedData) {
+  // 1) parse out your IV, ciphertext and HMAC from the incoming JSON
+  const iv            = hexToArrayBuffer(encryptedData.iv);
+  const cipherBytes   = hexToArrayBuffer(encryptedData.ciphertext);
+  const signatureBytes= hexToArrayBuffer(encryptedData.hmac);
 
-    // 2. First verify HMAC (security best practice)
-    const hmacKey = await crypto.subtle.importKey(
-      "raw",
-      HMAC_KEY_BYTES,
-      { name: "HMAC", hash: { name: "SHA-256" } },
-      false,
-      ["verify"]
-    );
+  // 2) decrypt with AES-CBC
+  const padded = await crypto.subtle.decrypt(
+    { name: "AES-CBC", iv },
+    aesKey,           // your imported CryptoKey for AES
+    cipherBytes
+  );
 
-    // Get the decrypted data (still padded) for verification
-    const aesKey = await crypto.subtle.importKey(
-      "raw", 
-      AES_KEY_BYTES, 
-      { name: "AES-CBC" }, 
-      false, 
-      ["decrypt"]
-    );
+  // ← here’s the missing bit: wrap your decrypted buffer in a Uint8Array
+  const plainBytes = new Uint8Array(padded);
 
-    const padded = await crypto.subtle.decrypt(
-      { name: "AES-CBC", iv }, 
-      aesKey, 
-      ciphertext
-    );
+  // 3) verify the HMAC over exactly these same bytes
+  const valid = await crypto.subtle.verify(
+    "HMAC",
+    hmacKey,          // your imported CryptoKey for HMAC
+    signatureBytes,   // the signature you extracted
+    plainBytes        // ← use this byte array
+  );
 
-    // Verify against the original HMAC
-// طريقتك الحالية
-const decryptedString = new TextDecoder().decode(plainBytes);
-const valid = await crypto.subtle.verify(
-  "HMAC",
-  hmacKey,
-  signature,
-  new TextEncoder().encode(decryptedString)
-);
-
-
-    if (!valid) {
-      throw new Error("HMAC verification failed - Data may be tampered");
-    }
-
-    // 3. Remove padding
-    const arr = new Uint8Array(padded);
-    const padLen = arr[arr.length - 1];
-    const plain = arr.slice(0, arr.length - padLen);
-    return JSON.parse(new TextDecoder().decode(plain));
-
-  } catch (error) {
-    console.error("Decryption error details:", {
-      error: error.message,
-      stack: error.stack,
-      encryptedData: {
-        iv: encrypted.iv,
-        hmac: encrypted.hmac,
-        ciphertextLength: encrypted.ciphertext.length
-      }
-    });
-    throw error;
+  if (!valid) {
+    throw new Error("HMAC verification failed – data may be tampered");
   }
+
+  // 4) now strip PKCS#7 padding & parse JSON
+  const unpadded = stripPkcs7Padding(plainBytes);
+  const jsonText = new TextDecoder().decode(unpadded);
+  return JSON.parse(jsonText);
 }
+
     
     
     // Component 1: Meter Data Table
