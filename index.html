@@ -119,38 +119,51 @@ function hexToArrayBuffer(hex) {
 }
 // 🔐 فك التشفير + التحقق من HMAC
 async function decryptCyberData(encryptedData) {
-  // 1) parse out your IV, ciphertext and HMAC from the incoming JSON
+  // ← הוספה פה: אם aesKey ו-hmacKey עדיין לא CryptoKey, תייבא אותם עכשיו
+  if (!(aesKey instanceof CryptoKey) || !(hmacKey instanceof CryptoKey)) {
+    aesKey = await crypto.subtle.importKey(
+      "raw",
+      AES_KEY_BYTES,
+      { name: "AES-CBC" },
+      false,
+      ["decrypt"]
+    );
+    hmacKey = await crypto.subtle.importKey(
+      "raw",
+      HMAC_KEY_BYTES,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"]
+    );
+  }
+
+  // 1) פרוס את ה־IV, ciphertext, HMAC
   const iv            = hexToArrayBuffer(encryptedData.iv);
   const cipherBytes   = hexToArrayBuffer(encryptedData.ciphertext);
   const signatureBytes= hexToArrayBuffer(encryptedData.hmac);
 
-  // 2) decrypt with AES-CBC
+  // 2) עכשיו aesKey כבר CryptoKey, אפשר לקרוא ל-decrypt ללא שגיאה
   const padded = await crypto.subtle.decrypt(
-    { name: "AES-CBC", iv },
-    aesKey,           // your imported CryptoKey for AES
+    { name: "AES-CBC", iv: new Uint8Array(iv) },
+    aesKey,
     cipherBytes
   );
 
-  // ← here’s the missing bit: wrap your decrypted buffer in a Uint8Array
+  // … שאר הקוד שלך נשאר אותו דבר
   const plainBytes = new Uint8Array(padded);
-
-  // 3) verify the HMAC over exactly these same bytes
   const valid = await crypto.subtle.verify(
     "HMAC",
-    hmacKey,          // your imported CryptoKey for HMAC
-    signatureBytes,   // the signature you extracted
-    plainBytes        // ← use this byte array
+    hmacKey,
+    signatureBytes,
+    plainBytes
   );
+  if (!valid) throw new Error("HMAC verification failed – data may be tampered");
 
-  if (!valid) {
-    throw new Error("HMAC verification failed – data may be tampered");
-  }
-
-  // 4) now strip PKCS#7 padding & parse JSON
   const unpadded = stripPkcs7Padding(plainBytes);
   const jsonText = new TextDecoder().decode(unpadded);
   return JSON.parse(jsonText);
 }
+
 
     
     
