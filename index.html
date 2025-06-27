@@ -78,49 +78,47 @@
 
   <!--  React App Script -->
   <script defer type="text/babel">
-const toUint8 = b64 => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-
-function wordArrayToUint8(wordArray) {
-  if (wordArray.words) {
-    const { words, sigBytes } = wordArray;
-    const u8 = new Uint8Array(sigBytes);
-    for (let i = 0; i < sigBytes; i++) {
-      u8[i] = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
-    }
-    return u8;
+const toUint8 = b64 => {
+  try {
+    return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  } catch (e) {
+    console.error("خطأ في تحويل Base64:", e);
+    throw new Error("تنسيق Base64 غير صحيح");
   }
-  return toUint8(wordArray);
-}
+};
 
-// 🔑 مفاتيح التشفير
+// 🔑 مفاتيح التشفير (يجب أن تتطابق مع تلك المستخدمة في الخادم)
 const AES_KEY = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; // 32 حرف (256 بت)
 const HMAC_KEY = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"; // 32 حرف (256 بت)
 
-const AES_WORDARRAY = CryptoJS.enc.Utf8.parse(AES_KEY);
-const HMAC_WORDARRAY = CryptoJS.enc.Utf8.parse(HMAC_KEY);
+// تحويل المفاتيح إلى Uint8Array
+const AES_KEY_BYTES = new TextEncoder().encode(AES_KEY);
+const HMAC_KEY_BYTES = new TextEncoder().encode(HMAC_KEY);
 
-const AES_KEY_BYTES = wordArrayToUint8(AES_WORDARRAY);
-const HMAC_KEY_BYTES = wordArrayToUint8(HMAC_WORDARRAY);
+console.log("معلومات المفاتيح:", {
+  AES_KEY: AES_KEY,
+  HMAC_KEY: HMAC_KEY,
+  AES_KEY_BYTES: AES_KEY_BYTES,
+  HMAC_KEY_BYTES: HMAC_KEY_BYTES
+});
 
-// دالة مساعدة لإزالة Padding
-function stripPkcs7Padding(data) {
-  const padLength = data[data.length - 1];
-  return data.slice(0, data.length - padLength);
-}
-
-// 🔐 فك التشفير + التحقق من HMAC
-async function decryptCyberData(encryptedData) {
+async function decryptCyberData(encrypted) {
   try {
-    // 1. تحويل البيانات من Base64
-    const iv = toUint8(encryptedData.iv);
-    const ciphertext = toUint8(encryptedData.ciphertext);
-    const signature = toUint8(encryptedData.hmac);
-
-    // 2. التحقق من طول IV
-    console.log("IV length:", iv.length);
-    if (iv.length !== 16) {
-      throw new Error(`طول IV غير صحيح: ${iv.length} (يجب أن يكون 16 بايت)`);
+    // 1. تحقق من وجود البيانات المطلوبة
+    if (!encrypted || !encrypted.iv || !encrypted.ciphertext || !encrypted.hmac) {
+      throw new Error("بيانات التشفير ناقصة أو غير صالحة");
     }
+
+    // 2. تحويل البيانات من Base64
+    const iv = toUint8(encrypted.iv);
+    const ciphertext = toUint8(encrypted.ciphertext);
+    const receivedHmac = toUint8(encrypted.hmac);
+
+    console.log("أطوال البيانات المدخلة:", {
+      iv: iv.length,
+      ciphertext: ciphertext.length,
+      hmac: receivedHmac.length
+    });
 
     // 3. استيراد المفاتيح
     const aesKey = await crypto.subtle.importKey(
@@ -146,40 +144,53 @@ async function decryptCyberData(encryptedData) {
       ciphertext
     );
 
-    // 5. إزالة Padding
+    // 5. إزالة Padding (PKCS7)
     const decryptedBytes = new Uint8Array(decrypted);
-    const plaintextBytes = stripPkcs7Padding(decryptedBytes);
+    const padLength = decryptedBytes[decryptedBytes.length - 1];
+    const plaintextBytes = decryptedBytes.slice(0, decryptedBytes.length - padLength);
+    const plaintext = new TextDecoder().decode(plaintextBytes);
 
-    // 6. التحقق من HMAC
+    console.log("البيانات بعد فك التشفير:", {
+      plaintext: plaintext,
+      plaintextBytes: plaintextBytes
+    });
+
+    // 6. التحقق من HMAC (باستخدام البيانات الأصلية قبل التشفير)
     const valid = await crypto.subtle.verify(
       "HMAC",
       hmacKey,
-      signature,
+      receivedHmac,
       plaintextBytes
     );
 
     if (!valid) {
-      throw new Error("فشل التحقق من HMAC - البيانات قد تكون معيبة");
+      // تسجيل تفاصيل HMAC للمقارنة
+      const generatedHmac = await crypto.subtle.sign(
+        "HMAC",
+        hmacKey,
+        plaintextBytes
+      );
+      
+      console.error("مقارنة HMAC:", {
+        received: btoa(String.fromCharCode(...receivedHmac)),
+        generated: btoa(String.fromCharCode(...new Uint8Array(generatedHmac)))
+      });
+      
+      throw new Error("فشل التحقق من HMAC - البيانات قد تكون معيبة أو المفاتيح غير متطابقة");
     }
 
     // 7. تحويل إلى JSON
-    const plaintext = new TextDecoder().decode(plaintextBytes);
     return JSON.parse(plaintext);
 
   } catch (error) {
-    console.error("تفاصيل الخطأ:", {
+    console.error("تفاصيل الخطأ في فك التشفير:", {
       message: error.message,
       stack: error.stack,
-      inputData: {
-        ivLength: encryptedData.iv?.length,
-        ciphertextLength: encryptedData.ciphertext?.length,
-        hmacLength: encryptedData.hmac?.length
-      }
+      encryptedData: encrypted
     });
     throw error;
   }
 }
-
     
     
     // Component 1: Meter Data Table
