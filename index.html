@@ -110,38 +110,12 @@ console.log("Keys:", {
 // 🔐 فك التشفير + التحقق من HMAC
 async function decryptCyberData(encrypted) {
   try {
-    // 1. تحويل IV من Base64 إلى Uint8Array (16 بايت)
+    // 1. Convert from Base64
     const iv = Uint8Array.from(atob(encrypted.iv), c => c.charCodeAt(0));
-    
-    // 2. تحويل ciphertext من Base64 إلى Uint8Array
     const ciphertext = Uint8Array.from(atob(encrypted.ciphertext), c => c.charCodeAt(0));
-    
-    // 3. تحويل HMAC من Base64 إلى Uint8Array
     const signature = Uint8Array.from(atob(encrypted.hmac), c => c.charCodeAt(0));
 
-    // 4. استيراد مفتاح AES
-    const aesKey = await crypto.subtle.importKey(
-      "raw", 
-      AES_KEY_BYTES, 
-      { name: "AES-CBC" }, 
-      false, 
-      ["decrypt"]
-    );
-
-    // 5. فك التشفير
-    const padded = await crypto.subtle.decrypt(
-      { name: "AES-CBC", iv }, 
-      aesKey, 
-      ciphertext
-    );
-
-    // 6. إزالة الحشو (PKCS7 Padding)
-    const arr = new Uint8Array(padded);
-    const padLen = arr[arr.length - 1];
-    const plain = arr.slice(0, arr.length - padLen);
-    const plaintext = new TextDecoder().decode(plain);
-
-    // 7. التحقق من HMAC
+    // 2. First verify HMAC (security best practice)
     const hmacKey = await crypto.subtle.importKey(
       "raw",
       HMAC_KEY_BYTES,
@@ -150,24 +124,52 @@ async function decryptCyberData(encrypted) {
       ["verify"]
     );
 
+    // Get the decrypted data (still padded) for verification
+    const aesKey = await crypto.subtle.importKey(
+      "raw", 
+      AES_KEY_BYTES, 
+      { name: "AES-CBC" }, 
+      false, 
+      ["decrypt"]
+    );
+
+    const padded = await crypto.subtle.decrypt(
+      { name: "AES-CBC", iv }, 
+      aesKey, 
+      ciphertext
+    );
+
+    // Verify against the original HMAC
     const valid = await crypto.subtle.verify(
       "HMAC",
       hmacKey,
       signature,
-      plain
+      new TextEncoder().encode(JSON.stringify(JSON.parse(new TextDecoder().decode(padded))))
     );
 
     if (!valid) {
-      throw new Error("HMAC verification failed - البيانات قد تكون معيبة أو معدلة");
+      throw new Error("HMAC verification failed - Data may be tampered");
     }
 
-    return JSON.parse(plaintext);
+    // 3. Remove padding
+    const arr = new Uint8Array(padded);
+    const padLen = arr[arr.length - 1];
+    const plain = arr.slice(0, arr.length - padLen);
+    return JSON.parse(new TextDecoder().decode(plain));
+
   } catch (error) {
-    console.error("Decryption error:", error);
+    console.error("Decryption error details:", {
+      error: error.message,
+      stack: error.stack,
+      encryptedData: {
+        iv: encrypted.iv,
+        hmac: encrypted.hmac,
+        ciphertextLength: encrypted.ciphertext.length
+      }
+    });
     throw error;
   }
 }
-
     
     
     // Component 1: Meter Data Table
