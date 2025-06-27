@@ -140,12 +140,15 @@ async function decryptCyberData(encrypted) {
     );
 
     // Verify against the original HMAC
-    const valid = await crypto.subtle.verify(
-      "hmac",
-      hmacKey,
-      signature,
-      new TextEncoder().encode(JSON.stringify(JSON.parse(new TextDecoder().decode(padded))))
-    );
+// طريقتك الحالية
+const decryptedString = new TextDecoder().decode(plainBytes);
+const valid = await crypto.subtle.verify(
+  "HMAC",
+  hmacKey,
+  signature,
+  new TextEncoder().encode(decryptedString)
+);
+
 
     if (!valid) {
       throw new Error("HMAC verification failed - Data may be tampered");
