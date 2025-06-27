@@ -17,6 +17,9 @@
   <script defer src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <!-- PapaParse for reading CSV -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
   <style>
     @keyframes fadeIn {
       0% {
@@ -80,21 +83,22 @@
 
   <!--  React App Script -->
   <script defer type="text/babel">
-    const fakeDecrypt = async (file) => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const json = JSON.parse(e.target.result);
-            resolve(json);
-          } catch (err) {
-            reject("Invalid JSON");
-          }
-        };
-        reader.onerror = () => reject("File reading error");
-        reader.readAsText(file);
-      });
-    };
+    const AES_KEY_BYTES  = new Uint8Array(Array(32).fill(0x78)); // x*32
+const HMAC_KEY_BYTES = new Uint8Array(Array(32).fill(0x79)); // y*32
+
+    async function decryptCyberData(encrypted, aesKeyBytes, hmacKeyBytes) {
+  const toUint8 = b64 => Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
+  const iv         = toUint8(encrypted.iv);
+  const ciphertext = toUint8(encrypted.ciphertext);
+  const signature  = toUint8(encrypted.hmac);
+
+  const key = await crypto.subtle.importKey("raw", aesKeyBytes, { name: "AES-CBC" }, false, ["decrypt"]);
+  const padded = await crypto.subtle.decrypt({ name: "AES-CBC", iv }, key, ciphertext);
+  const data = new Uint8Array(padded);
+  const padLen = data[data.length - 1];
+  const plain = data.slice(0, data.length - padLen);
+  return JSON.parse(new TextDecoder().decode(plain));
+}
 
     
     // Component 1: Meter Data Table
