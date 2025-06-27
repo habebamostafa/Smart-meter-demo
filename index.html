@@ -119,52 +119,32 @@ function hexToArrayBuffer(hex) {
 }
 // 🔐 فك التشفير + التحقق من HMAC
 async function decryptCyberData(encryptedData) {
-  // ← הוספה פה: אם aesKey ו-hmacKey עדיין לא CryptoKey, תייבא אותם עכשיו
-  
-  if (!(aesKey instanceof CryptoKey) || !(hmacKey instanceof CryptoKey)) {
-    aesKey = await crypto.subtle.importKey(
-      "raw",
-      AES_KEY_BYTES,
-      { name: "AES-CBC" },
-      false,
-      ["decrypt"]
-    );
-    hmacKey = await crypto.subtle.importKey(
-      "raw",
-      HMAC_KEY_BYTES,
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["verify"]
-    );
-  }
+  // המרת IV ו־ciphertext ל־Uint8Array במקום ArrayBuffer נקי
+  const ivBytes         = new Uint8Array(hexToArrayBuffer(encryptedData.iv));
+  const cipherBytesArr  = new Uint8Array(hexToArrayBuffer(encryptedData.ciphertext));
+  const signatureBytes  = new Uint8Array(hexToArrayBuffer(encryptedData.hmac));
 
-  // 1) פרוס את ה־IV, ciphertext, HMAC
-  const iv            = hexToArrayBuffer(encryptedData.iv);
-  const cipherBytes   = hexToArrayBuffer(encryptedData.ciphertext);
-  const signatureBytes= hexToArrayBuffer(encryptedData.hmac);
+  // לוג לבדיקת אורכים
+  console.log("🔍 IV length:", ivBytes.byteLength, "bytes (should be 16)");
+  console.log("🔍 Ciphertext length:", cipherBytesArr.byteLength, "bytes (must be multiple of 16)");
+  console.log("🔍 AES key length:", AES_KEY_BYTES.length, "bytes");
 
-  let ivBytes;
-  if (/^[0-9a-fA-F]{32}$/.test(encryptedData.iv)) {
-    // hex
-    ivBytes = new Uint8Array(hexToArrayBuffer(encryptedData.iv));
-  } else {
-    // base64
-    ivBytes = Uint8Array.from(atob(encryptedData.iv), c => c.charCodeAt(0));
-  }
-
-  // ודא שאורכו 16:
+  // וידוא בסיסי
   if (ivBytes.byteLength !== 16) {
     throw new Error(`Unexpected IV length ${ivBytes.byteLength}, must be 16`);
   }
+  if (cipherBytesArr.byteLength % 16 !== 0) {
+    throw new Error(`Ciphertext length ${cipherBytesArr.byteLength} is not a multiple of AES block size`);
+  }
 
-  // 2) פענוח:
+  // קריאה ל־decrypt עם ה־Uint8Array
   const padded = await crypto.subtle.decrypt(
     { name: "AES-CBC", iv: ivBytes },
     aesKey,
-    cipherBytes
+    cipherBytesArr
   );
-  
-  // … שאר הקוד שלך נשאר אותו דבר
+
+  // שאר הקוד נשאר כמו שהוא...
   const plainBytes = new Uint8Array(padded);
   const valid = await crypto.subtle.verify(
     "HMAC",
