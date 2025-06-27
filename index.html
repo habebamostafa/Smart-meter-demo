@@ -380,7 +380,8 @@ const CommModeBox = ({ data }) => {
         const fetchJson = async () => {
           try {
             const response = await fetch("data/encrypted_dataa.json");
-            const json = await response.json();
+            const enc = await response.json();
+            const json = await decryptCyberData(enc, AES_KEY_BYTES, HMAC_KEY_BYTES);
             console.log("R: " + response);
             console.log("J: " + json)
             //setForecast(json.forecast || []);
