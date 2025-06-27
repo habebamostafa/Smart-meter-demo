@@ -78,7 +78,6 @@
 
   <!--  React App Script -->
   <script defer type="text/babel">
-// 1) פונקציית העזר להמרת Base64 ל־Uint8Array
 const AES_KEY  = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
   const HMAC_KEY = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
 
@@ -93,7 +92,6 @@ const toUint8 = b64 => {
 
 let aesKey, hmacKey;
 
-// 2) ייבוא המפתחות
 async function initKeys() {
   aesKey = await crypto.subtle.importKey(
     "raw",
@@ -111,25 +109,21 @@ async function initKeys() {
   );
 }
 
-// 3) הפונקציה המעודכנת לפענוח+בדיקת HMAC+JSON.parse
 async function decryptCyberData(encrypted) {
-  // וודאו שהמפתחות קיימים...
   if (!aesKey || !hmacKey) {
     await initKeys();
   }
 
-  // 1) המרת Base64 → Uint8Array
   const ivBytes        = toUint8(encrypted.iv);
   const ciphertext     = toUint8(encrypted.ciphertext);
   const signatureBytes = toUint8(encrypted.hmac);
 
   console.log("Lengths:", {
-    iv: ivBytes.length,             // צריך להיות 16
-    ciphertext: ciphertext.length,  // צריך להיות כפולה של 16
-    hmac: signatureBytes.length     // צריך להיות 32
+    iv: ivBytes.length,             
+    ciphertext: ciphertext.length,  
+    hmac: signatureBytes.length     
   });
 
-  // 2) בדיקות בסיסיות
   if (ivBytes.length !== 16) {
     throw new Error(`Unexpected IV length ${ivBytes.length}, must be 16`);
   }
@@ -137,7 +131,6 @@ async function decryptCyberData(encrypted) {
     throw new Error(`Ciphertext length ${ciphertext.length} is not a multiple of 16`);
   }
 
-  // 3) AES-CBC decrypt
   const decryptedBuf = await crypto.subtle.decrypt(
     { name: "AES-CBC", iv: ivBytes },
     aesKey,
@@ -145,14 +138,11 @@ async function decryptCyberData(encrypted) {
   );
   const decrypted = new Uint8Array(decryptedBuf);
 
-  // 4) הסרת PKCS#7 Padding
  const plainBytes = decrypted;
-  // 5) JSON.parse עם לוג
   const plaintext = new TextDecoder().decode(plainBytes);
   console.log("📜 Plaintext:", plaintext);
   const data = JSON.parse(plaintext);
 
-  // 6) בדיקת HMAC על ה־plaintext (כפי שחישבתם בפייתון)
   const ok = await crypto.subtle.verify(
     "HMAC",
     hmacKey,
@@ -166,7 +156,6 @@ async function decryptCyberData(encrypted) {
   return data;
 }
 
-// 4) הפונקציה המעודכנת לטעינת ה־JSON, לוגים, ופול סדר העבודה ב־React
     
     
     // Component 1: Meter Data Table
@@ -449,7 +438,7 @@ React.useEffect(() => {
     try {
       const response = await fetch("web/data/encrypted_dataa.json");
       if (!response.ok) {
-        throw new Error("فشل في جلب البيانات: " + response.status);
+        throw new Error("error in getting data " + response.status);
       }
 
       const enc = await response.json();
@@ -470,7 +459,7 @@ React.useEffect(() => {
       setAnomalies(json.anomalies || []);
       setCommModes(json.communication_modes || []);
     } catch (error) {
-      console.error("خطأ في تحميل البيانات المشفرة:", error);
+      console.error("error in getting encrpt data", error);
     }
   };
   loadEncrypted();
