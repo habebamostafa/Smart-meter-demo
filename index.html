@@ -167,40 +167,7 @@ async function decryptCyberData(encrypted) {
 
   return data;
 }
-
 // 4) הפונקציה המעודכנת לטעינת ה־JSON, לוגים, ופול סדר העבודה ב־React
-useEffect(() => {
-  const loadEncrypted = async () => {
-    try {
-      const response = await fetch("web/data/encrypted_dataa.json");
-      if (!response.ok) {
-        throw new Error("فشل في جلب البيانات: " + response.status);
-      }
-
-      const enc = await response.json();
-      console.log("🔐 Encrypted payload:", {
-        iv: enc.iv,
-        hmac: enc.hmac,
-        ciphertextChars: enc.ciphertext.length
-      });
-
-      const json = await decryptCyberData(enc);
-
-      setForecast(
-        (json.forecast || []).map(item => ({
-          ...item,
-          timestamp: new Date(item.timestamp)
-        }))
-      );
-      setAnomalies(json.anomalies || []);
-      setCommModes(json.communication_modes || []);
-    } catch (error) {
-      console.error("خطأ في تحميل البيانات المشفرة:", error);
-    }
-  };
-  loadEncrypted();
-}, []);
-
     
     
     // Component 1: Meter Data Table
@@ -479,43 +446,33 @@ const CommModeBox = ({ data }) => {
       const [commModes, setCommModes] = React.useState([]);
 
 React.useEffect(() => {
-const loadEncrypted = async () => {
-  try {
-    // 1) Fetch the JSON file
-    const response = await fetch("web/data/encrypted_dataa.json");
-    if (!response.ok) {
-      throw new Error("فشل في جلب البيانات: " + response.status);
+  const loadEncrypted = async () => {
+    try {
+      const response = await fetch("web/data/encrypted_dataa.json");
+      if (!response.ok) {
+        throw new Error("فشل في جلب البيانات: " + response.status);
+      }
+
+      const enc = await response.json();
+      console.log("🔐 Encrypted payload:", {
+        iv: enc.iv,
+        hmac: enc.hmac,
+        ciphertextChars: enc.ciphertext.length
+      });
+
+      const json = await decryptCyberData(enc);
+
+      setForecast(
+        (json.forecast || []).map(item => ({
+          ...item,
+          timestamp: new Date(item.timestamp)
+        }))
+      );
+      setAnomalies(json.anomalies || []);
+      setCommModes(json.communication_modes || []);
+    } catch (error) {
+      console.error("خطأ في تحميل البيانات المشفرة:", error);
     }
-
-    // 2) Parse it into an object
-    const enc = await response.json();
-
-    // 3) Log IV length to confirm it's 16 bytes
-    const ivBytes = Uint8Array.from(atob(enc.iv), c => c.charCodeAt(0));
-    console.log("New IV length:", ivBytes.byteLength); // should be 16
-
-    // 4) Log the rest of the encrypted payload
-    console.log("Encrypted data received:", {
-      iv: enc.iv,
-      hmac: enc.hmac,
-      ciphertext: enc.ciphertext.length
-    });
-
-    // 5) Decrypt and verify HMAC
-    const json = await decryptCyberData(enc);
-
-    // 6) Update state with the decrypted data
-    setForecast(
-      (json.forecast || []).map(item => ({
-        ...item,
-        timestamp: new Date(item.timestamp)
-      }))
-    );
-    setAnomalies(json.anomalies || []);
-    setCommModes(json.communication_modes || []);
-  } catch (error) {
-    console.error("خطأ في تحميل البيانات المشفرة:", error);
-  }
   };
   loadEncrypted();
 }, []);
