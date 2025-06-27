@@ -103,68 +103,59 @@ const HMAC_KEY_BYTES = wordArrayToUint8(HMAC_WORDARRAY);
 // 🔐 فك التشفير + التحقق من HMAC
 async function decryptCyberData(encrypted) {
   try {
-    // تحويل البيانات إلى تنسيق مناسب
-    const iv = wordArrayToUint8(CryptoJS.enc.Base64.parse(encrypted.iv));
-    const ciphertext = wordArrayToUint8(CryptoJS.enc.Base64.parse(encrypted.ciphertext));
-    const signature = wordArrayToUint8(CryptoJS.enc.Base64.parse(encrypted.hmac));
+    // تحويل البيانات من Base64 إلى Uint8Array
+    const iv = CryptoJS.enc.Base64.parse(encrypted.iv).toString(CryptoJS.enc.Latin1);
+    const ciphertext = CryptoJS.enc.Base64.parse(encrypted.ciphertext).toString(CryptoJS.enc.Latin1);
+    const signature = CryptoJS.enc.Base64.parse(encrypted.hmac).toString(CryptoJS.enc.Latin1);
 
-    // استيراد مفتاح AES
+    // تحويل المفاتيح إلى تنسيق مناسب
     const aesKey = await crypto.subtle.importKey(
-      "raw", 
-      AES_KEY_BYTES, 
-      { name: "AES-CBC" }, 
-      false, 
+      "raw",
+      new TextEncoder().encode(AES_KEY),
+      { name: "AES-CBC" },
+      false,
       ["decrypt"]
     );
 
     // فك التشفير
-    const padded = await crypto.subtle.decrypt(
-      { name: "AES-CBC", iv }, 
-      aesKey, 
-      ciphertext
+    const decrypted = await crypto.subtle.decrypt(
+      { name: "AES-CBC", iv: new TextEncoder().encode(iv) },
+      aesKey,
+      new TextEncoder().encode(ciphertext)
     );
 
     // إزالة الحشو (Padding)
-    const arr = new Uint8Array(padded);
-    const padLen = arr[arr.length - 1];
-    const plain = arr.slice(0, arr.length - padLen);
+    const decryptedArray = new Uint8Array(decrypted);
+    const padLength = decryptedArray[decryptedArray.length - 1];
+    const plaintextArray = decryptedArray.slice(0, decryptedArray.length - padLength);
+    const plaintext = new TextDecoder().decode(plaintextArray);
 
-    // التحقق من توقيع HMAC
+    // التحقق من HMAC
     const hmacKey = await crypto.subtle.importKey(
       "raw",
-      HMAC_KEY_BYTES,
+      new TextEncoder().encode(HMAC_KEY),
       { name: "HMAC", hash: { name: "SHA-256" } },
       false,
       ["verify"]
     );
 
-    const valid = await crypto.subtle.verify(
+    const isValid = await crypto.subtle.verify(
       "HMAC",
       hmacKey,
-      signature,
-      plain
+      new TextEncoder().encode(signature),
+      new TextEncoder().encode(plaintext)
     );
 
-    if (!valid) {
-      throw new Error("HMAC verification failed - البيانات قد تكون معيبة أو معدلة");
+    if (!isValid) {
+      throw new Error("HMAC verification failed");
     }
 
-    // تحويل البيانات إلى نص
-    const decoded = new TextDecoder().decode(plain);
-    
-    try {
-      console.log("✅ تم فك التشفير بنجاح:", decoded);
-      return JSON.parse(decoded);
-    } catch (err) {
-      console.error("❌ خطأ في تحليل JSON:", err.message);
-      throw new Error("فشل تحليل JSON: " + err.message);
-    }
-  } catch (err) {
-    console.error("❌ خطأ في فك التشفير:", err);
-    throw new Error("فشل فك التشفير: " + err.message);
+    return JSON.parse(plaintext);
+  } catch (error) {
+    console.error("Decryption error:", error);
+    throw error;
   }
 }
-
 
 
     
@@ -451,6 +442,11 @@ React.useEffect(() => {
       if (!resp.ok) throw new Error("فشل في جلب البيانات: " + resp.status);
       
       const enc = await resp.json();
+      console.log("Encrypted data received:", {
+  iv: enc.iv,
+  hmac: enc.hmac,
+  ciphertext: enc.ciphertext.length
+});
       const json = await decryptCyberData(enc);
 
       // معالجة البيانات المفكوكة
