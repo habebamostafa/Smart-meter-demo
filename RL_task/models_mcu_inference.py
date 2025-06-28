@@ -24,7 +24,7 @@ dqn_agent.model.eval()
 autoencoder = load_model("trained_models/autoencoder_model.h5", compile=False)
 
 # --------- ANOMALY THRESHOLD ----------
-ANOMALY_THRESHOLD = 1.5579  
+ANOMALY_THRESHOLD = 2 
 
 @torch.no_grad()
 def select_comm_mode(signal_rf, latency_rf, signal_plc, latency_plc):
@@ -56,6 +56,7 @@ def parse_line(line):
         latency_rf = float(parts[2])
         signal_plc = float(parts[4])
         latency_plc = float(parts[5])
+        usage =float(parts[8])
     
         extra1 = float(parts[8]) if len(parts) > 8 else 0.0
         extra2 = 0.0  
@@ -96,7 +97,7 @@ def write_structured_output(timestamp, rl_mode, anomaly_flag, mse_score):
     if anomaly_flag:
         current["anomalies"].append({
             "timestamp": timestamp,
-            "severity": round(mse_score, 3)
+            "severity": round(float(mse_score, 3))
         })
 
     current["communication_modes"].append({
@@ -135,7 +136,7 @@ try:
 
                 rl_output = select_comm_mode(signal_rf, latency_rf, signal_plc, latency_plc)
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                anomaly_flag, mse_score = is_anomaly(data)
+                anomaly_flag, mse_score = is_anomaly(data['usage'])
                 result = write_structured_output(timestamp, rl_output, anomaly_flag, mse_score)
                 print("Output:", result)
 
