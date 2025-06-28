@@ -39,7 +39,7 @@ def encrypt_data(ai_json):
     }
 
 if __name__ == "__main__":
-    input_path = "syn_data.json"  
+    input_path = "ٌRL_task/model_outputs.json"  
 
     try:
         with open(input_path, "r", encoding="utf-8") as f:
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     encrypted = encrypt_data(ai_output)
 
     os.makedirs("web", exist_ok=True)
-    with open("web/data/encrypted_dataa.json", "w") as f:
+    with open("web/data/encrypt_data.json", "w") as f:
         json.dump(encrypted, f, indent=2)
         f.flush()
 

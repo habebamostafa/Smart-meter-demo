@@ -108,6 +108,9 @@ def write_structured_output(timestamp, rl_mode, anomaly_flag, mse_score):
         json.dump(current, f, indent=2)
 
     return current
+import subprocess
+
+subprocess.run(["python", "./cybersecurity.py", "model_outputs.json"])
 
 
 def reply_to_microcontroller(rl_mode):
