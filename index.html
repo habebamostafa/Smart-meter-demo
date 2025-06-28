@@ -85,8 +85,8 @@ const toUint8 = b64 => {
   try {
     return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
   } catch (e) {
-    console.error("خطأ في تحويل Base64:", e);
-    throw new Error("تنسيق Base64 غير صحيح");
+    console.error("error on Base64:", e);
+    throw new Error("error format of base64 ");
   }
 };
 
@@ -140,7 +140,7 @@ async function decryptCyberData(encrypted) {
 
  const plainBytes = decrypted;
   const plaintext = new TextDecoder().decode(plainBytes);
-  console.log("📜 Plaintext:", plaintext);
+  console.log("Plaintext:", plaintext);
   const data = JSON.parse(plaintext);
 
   const ok = await crypto.subtle.verify(
