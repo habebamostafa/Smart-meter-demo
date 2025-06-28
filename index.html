@@ -323,7 +323,7 @@ const ForecastBox = ({ data }) => {
             <div className="bg-green-50 p-3 rounded-lg text-center">
               <div className="text-sm text-green-600">متوسط الاستهلاك</div>
               <div className="font-bold text-lg">
-                {(data.reduce((a, b) => a + b.predicted_kwh, 0) / data.length.toFixed(2)} ك.و.س
+                {(data.reduce((a, b) => a + b.predicted_kwh, 0) / data.length.toFixed(2))} ك.و.س
               </div>
             </div>
             <div className="bg-yellow-50 p-3 rounded-lg text-center">
@@ -344,6 +344,7 @@ const ForecastBox = ({ data }) => {
     </div>
   );
 };
+
 // Component 3: Anomalies 
 const AnomalyBox = ({ data }) => {
   const getBarColor = (sev) => {
